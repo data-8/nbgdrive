@@ -1,5 +1,7 @@
 import os
 import json
+import requests
+import tornado.httpclient
 from notebook.utils import url_path_join 
 from notebook.base.handlers import IPythonHandler
 
@@ -30,9 +32,12 @@ def sync_gdrive_directory():
         && gdrive sync upload /home $LOAD_DIRECTORY \
         && echo "Syncing directory now."')
 
-    return {
-        'status' : 'Syncing'
-    }
+    url = "http://localhost:8888/gdrive"
+    req = tornado.httpclient.HTTPRequest(url, 'GET')
+    client = tornado.httpclient.HTTPClient()
+    res = client.fetch(req)
+    print res.code
+    print res.body
 
 class SyncHandler(IPythonHandler):
     def get(self):
