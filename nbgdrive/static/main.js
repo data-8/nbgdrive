@@ -75,8 +75,15 @@ define([
          * TODO: EXTREMELY HACKY. */
         setInterval(check_autosync_time, 1000 * 60);
 
+        /* The below is correct. */
+        $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: "Hello world!"}, function(data) {
+            console.log(data);
+        });
+
         /* Registers a new button with the notebook. */
         var manual_sync_handler = function () {
+            /* Make a put request to gresponse URL with entry. */
+
             $.getJSON(utils.get_body_data('baseUrl') + 'gsync', function(data) {
                 // FIXME: Proper setups for MB and GB. MB should have 0 things
                 // after the ., but GB should have 2.

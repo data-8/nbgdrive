@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import urllib2
 import tornado.httpclient
 from notebook.utils import url_path_join 
 from notebook.base.handlers import IPythonHandler
@@ -26,18 +27,32 @@ def make_gdrive_directory():
         'status' : 'Creating Directory'
     }
 
-def sync_gdrive_directory():
-    os.system('STORED_DIR="data8/$JPY_USER" \
-        && LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)" \
-        && gdrive sync upload /home $LOAD_DIRECTORY \
-        && echo "Syncing directory now."')
+def handle_response (response):
+    if response.error:
+        print "Error:", response.error
+    else:
+        print response.body
 
-    url = "http://localhost:8888/gdrive"
-    req = tornado.httpclient.HTTPRequest(url, 'GET')
-    client = tornado.httpclient.HTTPClient()
-    res = client.fetch(req)
-    print res.code
-    print res.body
+def sync_gdrive_directory():
+    # os.system('STORED_DIR="data8/$JPY_USER" \
+    #     && LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)" \
+    #     && gdrive sync upload /home $LOAD_DIRECTORY \
+    #     && echo "Syncing directory now."')
+
+    try:
+        url = "http://localhost:8888/gresponse"
+        req = tornado.httpclient.HTTPRequest(url, 'GET')
+        client = tornado.httpclient.AsyncHTTPClient()
+        res = client.fetch(req, handle_response)
+    except:
+        print "errored during request"
+
+    return {
+        'status' : 'Syncing'
+    }
+
+def read_argument (argument):
+    print argument
 
 class SyncHandler(IPythonHandler):
     def get(self):
@@ -47,11 +62,25 @@ class DriveHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(make_gdrive_directory()))
 
+class ResponseHandler(IPythonHandler):
+
+    def get(self):
+        self.finish(json.dumps({'omg' : 'wtf'}))
+
+    def post(self):
+        # self.set_header("Content-Type", "text/plain")
+        # self.write("This is not working")
+        print self.get_body_argument("message")
+        read_argument (self.get_body_argument("message"))
+        self.finish("You wrote " + self.get_body_argument("message"))
+
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/gdrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/gsync')
+    response_route_pattern = url_path_join(web_app.settings['base_url'], '/gresponse')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
-        (sync_route_pattern, SyncHandler)
+        (sync_route_pattern, SyncHandler),
+        (response_route_pattern, ResponseHandler)
     ])
