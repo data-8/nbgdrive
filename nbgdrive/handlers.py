@@ -1,9 +1,8 @@
 import os
-import subprocess
 import json
 import requests
-import urllib2
 import tornado.httpclient
+from subprocess import Popen, PIPE
 from notebook.utils import url_path_join 
 from notebook.base.handlers import IPythonHandler
 
@@ -28,18 +27,16 @@ def make_gdrive_directory():
     }
 
 def check_gdrive_authenticated():
-    # Write the URL to a file 
-    os.system('DRIVE_RESP="$(echo '' | gdrive about)" \
-               && URL_TO_VISIT="$(echo "$DRIVE_RESP" | grep http)" \
-               && rm authURL.txt \
-               && echo $URL_TO_VISIT > authURL.txt')
+    p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = p.communicate('')
 
-    # We must use the subprocess module instead of os.system in order to get output
-    with open("authURL.txt") as f:
-        drive_authentication_url = f.readline()
+    drive_authentication_url = output.split('\n')[2]
+
+    if 'http' not in drive_authentication_url:
+        drive_authentication_url = "authenticated"
 
     return {
-        'authentication' : 'world'
+        'authentication' : drive_authentication_url
     }
 
 def sync_gdrive_directory():
@@ -51,6 +48,10 @@ def sync_gdrive_directory():
     return {
         'status' : 'Syncing'
     }
+
+def verify_gdrive_user(auth_code):
+    p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = p.communicate(auth_code)
 
 class SyncHandler(IPythonHandler):
     def get(self):
@@ -66,6 +67,7 @@ class ResponseHandler(IPythonHandler):
         self.finish(json.dumps(check_gdrive_authenticated()))
 
     def post(self):
+        verify_gdrive_user(self.get_body_argument("message"))
         self.finish("You wrote " + self.get_body_argument("message"))
 
 def setup_handlers(web_app):

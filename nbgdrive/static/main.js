@@ -65,19 +65,24 @@ define([
     var load_ipython_extension = function () {
         /* Creates an extra field for the Jupyter notebook. */
         createDisplayDiv();
-        
-        /* Triggers the directory to be created a single time. */
-        $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
-            var display = String(data['status']);
-        });
 
         $.getJSON(utils.get_body_data('baseUrl') + 'gresponse', function(data) {
             var display = String(data['authentication'])
+
+            if (display !== "authenticated") {
+                alert("Please authenticate Google Drive at this url: " + display);
+            }
+            
             console.log("URL: " + display);
         });
+        
+        /* Triggers the directory to be created a single time. */
+        // $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
+        //     var display = String(data['status']);
+        // });
 
         /* Create a function that checks the time every minute, autosyncs when 3 AM */
-        setInterval(check_autosync_time, 1000 * 60);
+        // setInterval(check_autosync_time, 1000 * 60);
 
         /* Registers a new button with the notebook. */
         var manual_sync_handler = function () {

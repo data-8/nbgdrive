@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="nbgdrive",
-    version='0.2.3',
+    version='0.2.4',
     url="https://github.com/jiefugong/nbgdrive",
     author="Jeff Gong",
     description="Simple Jupyter extension to allow user to sync files to google drive.",
