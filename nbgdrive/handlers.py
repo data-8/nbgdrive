@@ -1,4 +1,5 @@
 import os
+import subprocess
 import json
 import requests
 import urllib2
@@ -23,36 +24,33 @@ def make_gdrive_directory():
         && gdrive sync upload /home $LOAD_DIRECTORY')
 
     return {
-        # Placeholder until $.ajax can be used
         'status' : 'Creating Directory'
     }
 
-def handle_response (response):
-    if response.error:
-        print "Error:", response.error
-    else:
-        print response.body
+def check_gdrive_authenticated():
+    # Write the URL to a file 
+    os.system('DRIVE_RESP="$(echo '' | gdrive about)" \
+               && URL_TO_VISIT="$(echo "$DRIVE_RESP" | grep http)" \
+               && rm authURL.txt \
+               && echo $URL_TO_VISIT > authURL.txt')
+
+    # We must use the subprocess module instead of os.system in order to get output
+    with open("authURL.txt") as f:
+        drive_authentication_url = f.readline()
+
+    return {
+        'authentication' : 'world'
+    }
 
 def sync_gdrive_directory():
-    # os.system('STORED_DIR="data8/$JPY_USER" \
-    #     && LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)" \
-    #     && gdrive sync upload /home $LOAD_DIRECTORY \
-    #     && echo "Syncing directory now."')
-
-    try:
-        url = "http://localhost:8888/gresponse"
-        req = tornado.httpclient.HTTPRequest(url, 'GET')
-        client = tornado.httpclient.AsyncHTTPClient()
-        res = client.fetch(req, handle_response)
-    except:
-        print "errored during request"
+    os.system('STORED_DIR="data8/$JPY_USER" \
+        && LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)" \
+        && gdrive sync upload /home $LOAD_DIRECTORY \
+        && echo "Syncing directory now."')
 
     return {
         'status' : 'Syncing'
     }
-
-def read_argument (argument):
-    print argument
 
 class SyncHandler(IPythonHandler):
     def get(self):
@@ -65,13 +63,9 @@ class DriveHandler(IPythonHandler):
 class ResponseHandler(IPythonHandler):
 
     def get(self):
-        self.finish(json.dumps({'omg' : 'wtf'}))
+        self.finish(json.dumps(check_gdrive_authenticated()))
 
     def post(self):
-        # self.set_header("Content-Type", "text/plain")
-        # self.write("This is not working")
-        print self.get_body_argument("message")
-        read_argument (self.get_body_argument("message"))
         self.finish("You wrote " + self.get_body_argument("message"))
 
 def setup_handlers(web_app):

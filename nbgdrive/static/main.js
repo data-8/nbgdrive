@@ -71,6 +71,11 @@ define([
             var display = String(data['status']);
         });
 
+        $.getJSON(utils.get_body_data('baseUrl') + 'gresponse', function(data) {
+            var display = String(data['authentication'])
+            console.log("URL: " + display);
+        });
+
         /* Create a function that checks the time every minute, autosyncs when 3 AM */
         setInterval(check_autosync_time, 1000 * 60);
 
