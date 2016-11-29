@@ -11,15 +11,17 @@ define([
                       .addClass('btn-group')
                       .addClass('pull-right')
             .append(
-                $('<strong>').text('Creating Google Drive Directory: ')
-            ).append(
-                $('<span>').attr('id', 'nbgdrive-status')
-                           .attr('title', 'Latest action performed by GDrive Extension')
+                $('<input>').attr('id', 'nbgdrive-authentication')
+                           .attr('type', 'text')
             ).append(
                 $('<button>').attr('id', 'nbgdrive-button')
                              .text('Submit')
                              .click(function() {
-                                alert ("Handler for nbdgdrive-button clicked!");
+                                // Will send the copy pasted key as a POST request to authenticate with
+                                var gdrive_auth_id = $("#nbgdrive-authentication").val();
+                                $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: gdrive_auth_id}, function(data) {
+                                    console.log(data);
+                                });
                              })
             )
         );
@@ -29,7 +31,6 @@ define([
         $.getJSON(utils.get_body_data('baseUrl') + 'gsync', function(data) {
             var display = String(data['status']);
             console.log ("Current text: " + display);
-            $('#nbgdrive-status').text(display);
         });
     }
 
@@ -68,17 +69,10 @@ define([
         /* Triggers the directory to be created a single time. */
         $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
             var display = String(data['status']);
-            $('#nbgdrive-status').text(display);
         });
 
-        /* Create a function that checks the time every minute, autosyncs when 3 AM
-         * TODO: EXTREMELY HACKY. */
+        /* Create a function that checks the time every minute, autosyncs when 3 AM */
         setInterval(check_autosync_time, 1000 * 60);
-
-        /* The below is correct. */
-        $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: "Hello world!"}, function(data) {
-            console.log(data);
-        });
 
         /* Registers a new button with the notebook. */
         var manual_sync_handler = function () {
@@ -89,7 +83,6 @@ define([
                 // after the ., but GB should have 2.
                 var display = String(data['status']);
                 console.log ("Current text: " + display);
-                $('#nbgdrive-status').text(display);
             });
         }
 
