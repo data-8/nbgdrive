@@ -40,6 +40,10 @@ def check_gdrive_authenticated():
     }
 
 def sync_gdrive_directory():
+    # Issue: If we try to do this without authentication, we'll be locked
+    # Solution: Check to make sure we are allowed to do this first
+
+    
     os.system('STORED_DIR="data8/$JPY_USER" \
         && LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)" \
         && gdrive sync upload /home $LOAD_DIRECTORY \
@@ -52,6 +56,7 @@ def sync_gdrive_directory():
 def verify_gdrive_user(auth_code):
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(auth_code)
+    return output
 
 class SyncHandler(IPythonHandler):
     def get(self):
@@ -62,13 +67,12 @@ class DriveHandler(IPythonHandler):
         self.finish(json.dumps(make_gdrive_directory()))
 
 class ResponseHandler(IPythonHandler):
-
     def get(self):
         self.finish(json.dumps(check_gdrive_authenticated()))
 
     def post(self):
-        verify_gdrive_user(self.get_body_argument("message"))
-        self.finish("You wrote " + self.get_body_argument("message"))
+        success = verify_gdrive_user(self.get_body_argument("message"))
+        self.finish(success)
 
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/gdrive')
