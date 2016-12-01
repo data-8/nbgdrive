@@ -5,66 +5,113 @@ define([
 ], function (
     $, utils, Jupyter
 ) {
+    /*
+     *  Updates the Jupyter notebook display to handle the initial Drive authentication.
+     */
     function createDisplayDiv() {
+        $("#nbgdrive-display").remove()
+        $("#nbgdrive-link").remove()
+
         $('#maintoolbar-container').append(
             $('<div>').attr('id', 'nbgdrive-display')
                       .addClass('btn-group')
                       .addClass('pull-right')
             .append(
-                $('<strong>').text('Creating Google Drive Directory: ')
+                $('<input>').attr('id', 'nbgdrive-authentication')
+                           .attr('type', 'text')
             ).append(
-                $('<span>').attr('id', 'nbgdrive-status')
-                           .attr('title', 'Latest action performed by GDrive Extension')
+                $('<button>').attr('id', 'nbgdrive-button')
+                             .text('Submit')
+                             .click(function() {
+                                var gdrive_auth_id = $("#nbgdrive-authentication").val();
+                                $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: gdrive_auth_id}, function(response) {
+                                    if (response.includes("User")) {
+                                        // If we authenticate properly, create the sync directory and set up 
+                                        // the autosync handler. 
+                                        $("#nbgdrive-display").remove();
+                                        $("#nbgdrive-link").remove();
+                                        $("#nbgdrive-button").remove();
+
+                                        $('#maintoolbar-container').append(
+                                            $('<div>').attr('id', 'nbgdrive-display')
+                                                    .addClass('btn-group')
+                                                    .addClass('pull-right')
+                                            .append(
+                                                $('<strong>').attr('id', 'nbgdrive-authenticated-success')
+                                                             .text('User authenticated!')
+                                            )
+                                        );
+
+                                        $( "#nbgdrive-authenticated-success").fadeOut(2500);
+
+                                        $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
+                                            var display = String(data['status']);
+                                        });
+                                        setInterval(checkAutosyncTime, 1000 * 60);
+                                    }
+                                });
+                             })
             )
         );
+
+        $('nbgdrive-authentication').after("      ");
     }
 
-    var autosync_gdrive_files = function () {
+    /* 
+     *  Makes a GET request to trigger the manual sync of the current directory 
+     *  to a pre-established Google Drive Sync Directory. 
+     */
+    var syncDriveFiles = function () {
         $.getJSON(utils.get_body_data('baseUrl') + 'gsync', function(data) {
             var display = String(data['status']);
             console.log ("Current text: " + display);
-            $('#nbgdrive-status').text(display);
         });
     }
 
-    var check_autosync_time = function () {
-        console.log ("Checking the time for autosync.");
+    /* 
+     *  Periodically checks the system clock, syncing files at 3 AM. 
+     */
+    var checkAutosyncTime = function () {
         var date = new Date();
         if (date.getHours() === 3  && date.getMinutes() === 0) {
-            autosync_gdrive_files();
+            syncDriveFiles();
         }
+    }
+
+    /* 
+     *  Takes in a string URL and opens it in a new tab
+     */
+    var openAuthenticationInNewTab = function (url) {
+        var win = window.open(url, '_blank');
+        win.focus();
     }
 
     var load_ipython_extension = function () {
-        /* Creates an extra field for the Jupyter notebook. */
-        createDisplayDiv();
-        
-        /* Triggers the directory to be created a single time. */
-        $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
-            var display = String(data['status']);
-            $('#nbgdrive-status').text(display);
+        $.getJSON(utils.get_body_data('baseUrl') + 'gresponse', function(data) {
+            var display = String(data['authentication'])
+
+            if (display !== "authenticated") {
+                $('#maintoolbar-container').append(
+                        $('<div>').attr('id', 'nbgdrive-display')
+                                  .addClass('btn-group')
+                                  .addClass('pull-right')
+                        .append(
+                            $('<button>').attr('id', 'nbgdrive-link')
+                                         .text('Verify Drive')
+                                         .click(function() {
+                                            openAuthenticationInNewTab(display);
+                                            createDisplayDiv()
+                                         })
+                        )
+                    );
+            }
         });
-
-        /* Create a function that checks the time every minute, autosyncs when 3 AM
-         * TODO: EXTREMELY HACKY. */
-        setInterval(check_autosync_time, 1000 * 60);
-
-        /* Registers a new button with the notebook. */
-        var handler = function () {
-            $.getJSON(utils.get_body_data('baseUrl') + 'gsync', function(data) {
-                // FIXME: Proper setups for MB and GB. MB should have 0 things
-                // after the ., but GB should have 2.
-                var display = String(data['status']);
-                console.log ("Current text: " + display);
-                $('#nbgdrive-status').text(display);
-            });
-        }
 
         var action = {
             icon: 'fa-cloud', // a font-awesome class used on buttons, etc
             help    : 'Manually syncs the home directory with Google Drive',
             help_index : 'zz',
-            handler : handler
+            handler : syncDriveFiles
         }
 
         var prefix = 'gsync_extension';
