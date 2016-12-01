@@ -32,6 +32,18 @@ define([
                                         $("#nbgdrive-link").remove();
                                         $("#nbgdrive-button").remove();
 
+                                        $('#maintoolbar-container').append(
+                                            $('<div>').attr('id', 'nbgdrive-display')
+                                                    .addClass('btn-group')
+                                                    .addClass('pull-right')
+                                            .append(
+                                                $('<strong>').attr('id', 'nbgdrive-authenticated-success')
+                                                             .text('User authenticated!')
+                                            )
+                                        );
+
+                                        $( "#nbgdrive-authenticated-success").fadeOut(2500);
+
                                         $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
                                             var display = String(data['status']);
                                         });
@@ -41,6 +53,8 @@ define([
                              })
             )
         );
+
+        $('nbgdrive-authentication').after("      ");
     }
 
     /* 
