@@ -1,7 +1,7 @@
 import os
 import json
 from subprocess import Popen, PIPE
-from notebook.utils import url_path_join 
+from notebook.utils import url_path_join
 from notebook.base.handlers import IPythonHandler
 
 # This nbextension makes a few assumptions that may need to be handled at a later time.
@@ -19,7 +19,7 @@ def make_gdrive_directory():
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
                     DIR_EXISTS="$(gdrive list | grep -i $STORED_DIR | wc -l)"; \
-                    [ $DIR_EXISTS -lt 1 ] && (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload /Users/jgong/Sync $ID) || echo "Directory already exists."; \
+                    [ $DIR_EXISTS -lt 1 ] && (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload /home $ID) || echo "Directory already exists."; \
                     LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                     gdrive sync upload /home $LOAD_DIRECTORY'
         p = Popen(command, stdout=PIPE, shell=True)
@@ -43,7 +43,7 @@ def sync_gdrive_directory():
     if drive_authenticated['authentication'] == "authenticated":
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                    gdrive sync upload /Users/jgong/Sync $LOAD_DIRECTORY; \
+                    gdrive sync upload /home $LOAD_DIRECTORY; \
                     echo "Syncing directory now."'
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
