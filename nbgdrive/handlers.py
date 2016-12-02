@@ -83,9 +83,9 @@ class ResponseHandler(IPythonHandler):
         self.finish(success)
 
 def setup_handlers(web_app):
-    dir_route_pattern = url_path_join(web_app.settings['base_url'], '/gdrive')
-    sync_route_pattern = url_path_join(web_app.settings['base_url'], '/gsync')
-    response_route_pattern = url_path_join(web_app.settings['base_url'], '/gresponse')
+    dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
+    sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
+    response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),

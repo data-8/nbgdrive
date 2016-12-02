@@ -25,7 +25,7 @@ define([
                              .text('Submit Drive Key')
                              .click(function() {
                                 var gdrive_auth_id = $("#nbgdrive-authentication").val();
-                                $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: gdrive_auth_id}, function(response) {
+                                $.post(utils.get_body_data('baseUrl') + 'authenticateDrive', {message: gdrive_auth_id}, function(response) {
 
                                     $("#nbgdrive-display").remove();
                                     $("#nbgdrive-link").remove();
@@ -51,7 +51,7 @@ define([
                                         createManualSyncButton();
 
                                         /* GET Request to alert Server to create a sync directory. */
-                                        $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
+                                        $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
                                         });
 
@@ -84,7 +84,7 @@ define([
      *  to a pre-established Google Drive Sync Directory. 
      */
     var syncDriveFiles = function () {
-        $.getJSON(utils.get_body_data('baseUrl') + 'gsync', function(data) {
+        $.getJSON(utils.get_body_data('baseUrl') + 'syncDrive', function(data) {
             var display = String(data['status']);
             console.log ("Current text: " + display);
         });
@@ -133,7 +133,7 @@ define([
         $("#nbgdrive-display").remove();
         $("#nggdrive-authenticated-result").remove();
 
-        $.getJSON(utils.get_body_data('baseUrl') + 'gresponse', function(data) {
+        $.getJSON(utils.get_body_data('baseUrl') + 'authenticateDrive', function(data) {
             var display = String(data['authentication'])
 
             if (display !== "authenticated") {
