@@ -1,7 +1,5 @@
 import os
 import json
-import requests
-import tornado.httpclient
 from subprocess import Popen, PIPE
 from notebook.utils import url_path_join 
 from notebook.base.handlers import IPythonHandler

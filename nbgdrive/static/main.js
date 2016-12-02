@@ -9,6 +9,7 @@ define([
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
     function createDisplayDiv() {
+        /* Remove the link elements. */
         $("#nbgdrive-display").remove()
         $("#nbgdrive-link").remove()
 
@@ -21,33 +22,54 @@ define([
                            .attr('type', 'text')
             ).append(
                 $('<button>').attr('id', 'nbgdrive-button')
-                             .text('Submit')
+                             .text('Submit Drive Key')
                              .click(function() {
                                 var gdrive_auth_id = $("#nbgdrive-authentication").val();
                                 $.post(utils.get_body_data('baseUrl') + 'gresponse', {message: gdrive_auth_id}, function(response) {
+
+                                    $("#nbgdrive-display").remove();
+                                    $("#nbgdrive-link").remove();
+                                    $("#nbgdrive-button").remove(); 
+
+                                    /* The key was valid and we have authenticated properly. */
                                     if (response.includes("User")) {
-                                        // If we authenticate properly, create the sync directory and set up 
-                                        // the autosync handler. 
-                                        $("#nbgdrive-display").remove();
-                                        $("#nbgdrive-link").remove();
-                                        $("#nbgdrive-button").remove();
 
                                         $('#maintoolbar-container').append(
                                             $('<div>').attr('id', 'nbgdrive-display')
                                                     .addClass('btn-group')
                                                     .addClass('pull-right')
                                             .append(
-                                                $('<strong>').attr('id', 'nbgdrive-authenticated-success')
+                                                $('<strong>').attr('id', 'ngdrive-authenticated-result')
                                                              .text('User authenticated!')
                                             )
                                         );
 
-                                        $( "#nbgdrive-authenticated-success").fadeOut(2500);
+                                        /* Alert user that they've successfully authenticated. */
+                                        $( "#ngdrive-authenticated-result").fadeOut(4000);
 
+                                        /* Add a button to allow to manually sync their Drive files. */
+                                        createManualSyncButton();
+
+                                        /* GET Request to alert Server to create a sync directory. */
                                         $.getJSON(utils.get_body_data('baseUrl') + 'gdrive', function(data) {
                                             var display = String(data['status']);
                                         });
+
+                                        /* Start autosync function to background sync Google Drive. */
                                         setInterval(checkAutosyncTime, 1000 * 60);
+                                    } else {
+                                        $('#maintoolbar-container').append(
+                                            $('<div>').attr('id', 'nbgdrive-display')
+                                                    .addClass('btn-group')
+                                                    .addClass('pull-right')
+                                            .append(
+                                                $('<strong>').attr('id', 'ngdrive-authenticated-result')
+                                                             .text('Your key was incorrect. Please try again!')
+                                            )
+                                        );
+
+                                        $("#ngdrive-authenticated-result").fadeOut(4000);
+                                        setTimeout(displayDriveVerificationLink, 5000);
                                     }
                                 });
                              })
@@ -86,7 +108,31 @@ define([
         win.focus();
     }
 
-    var load_ipython_extension = function () {
+    /* 
+     *  Creates the button to manually sync Google Drive.
+     */
+    var createManualSyncButton = function () {
+        var action = {
+            icon: 'fa-cloud', // a font-awesome class used on buttons, etc
+            help    : 'Manually syncs the home directory with Google Drive',
+            help_index : 'zz',
+            handler : syncDriveFiles
+        }
+
+        var prefix = 'gsync_extension';
+        var action_name = 'show-alert';
+
+        var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
+        Jupyter.toolbar.add_buttons_group([full_action_name]);  
+    }
+
+    /* 
+     *  Retrieves Drive verification link and displays it to the user.
+     */
+    var displayDriveVerificationLink = function () {
+        $("#nbgdrive-display").remove();
+        $("#nggdrive-authenticated-result").remove();
+
         $.getJSON(utils.get_body_data('baseUrl') + 'gresponse', function(data) {
             var display = String(data['authentication'])
 
@@ -104,21 +150,14 @@ define([
                                          })
                         )
                     );
+            } else {
+                createManualSyncButton();
             }
-        });
+        }); 
+    }
 
-        var action = {
-            icon: 'fa-cloud', // a font-awesome class used on buttons, etc
-            help    : 'Manually syncs the home directory with Google Drive',
-            help_index : 'zz',
-            handler : syncDriveFiles
-        }
-
-        var prefix = 'gsync_extension';
-        var action_name = 'show-alert';
-
-        var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
-        Jupyter.toolbar.add_buttons_group([full_action_name]);        
+    var load_ipython_extension = function () {
+        displayDriveVerificationLink();      
     };
 
     return {
