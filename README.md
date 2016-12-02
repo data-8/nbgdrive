@@ -6,7 +6,7 @@ A Google Drive extension for jupyter notebook. Automatically creates a sync dire
 You can currently install this directly from git:
 
 ```
-pip install git+https://github.com/jiefugong/nbgdrive.git
+pip install git+https://github.com/data-8/nbgdrive.git
 jupyter serverextension enable --py nbgdrive
 jupyter nbextension install --py nbgdrive
 ```
