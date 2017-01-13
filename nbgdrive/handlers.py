@@ -34,7 +34,7 @@ def make_gdrive_directory():
 def verify_gdrive_user(auth_code):
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(auth_code)
-    return output
+    return str(output,'utf-8')
 
 def sync_gdrive_directory():
     drive_authenticated = check_gdrive_authenticated()
@@ -57,7 +57,7 @@ def check_gdrive_authenticated():
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate('')
 
-    drive_authentication_url = output.split('\n')[2]
+    drive_authentication_url = str(output,'utf-8').split('\n')[2]
 
     if 'http' not in drive_authentication_url:
         drive_authentication_url = "authenticated"
