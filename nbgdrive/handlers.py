@@ -42,7 +42,7 @@ def sync_gdrive_directory():
 
     if drive_authenticated['authentication'] == "authenticated":
         command = 'STORED_DIR="data8/$JPY_USER"; \
-                    LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                    LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                     gdrive sync upload /home $LOAD_DIRECTORY; \
                     echo "Syncing directory now."'
         p = Popen(command, stdout=PIPE, shell=True)
