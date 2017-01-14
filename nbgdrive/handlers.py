@@ -34,7 +34,7 @@ def make_gdrive_directory():
 def verify_gdrive_user(auth_code):
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(auth_code)
-    return str(output,'utf-8')
+    return output
 
 def sync_gdrive_directory():
     drive_authenticated = check_gdrive_authenticated()
@@ -75,11 +75,12 @@ class DriveHandler(IPythonHandler):
         self.finish(json.dumps(make_gdrive_directory()))
 
 class ResponseHandler(IPythonHandler):
+
     def get(self):
         self.finish(json.dumps(check_gdrive_authenticated()))
 
     def post(self):
-        success = verify_gdrive_user(self.get_body_argument("message"))
+        success = verify_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
 def setup_handlers(web_app):

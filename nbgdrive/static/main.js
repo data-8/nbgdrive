@@ -25,11 +25,17 @@ define([
                              .text('Submit Drive Key')
                              .click(function() {
                                 var gdrive_auth_id = $("#nbgdrive-authentication").val();
-                                $.post(utils.get_body_data('baseUrl') + 'authenticateDrive', {message: gdrive_auth_id}, function(response) {
+                                var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+                                $.post(utils.get_body_data('baseUrl') + 'authenticateDrive',
+                                    {
+                                        message: gdrive_auth_id,
+                                        _xsrf: r ? r[1] : undefined
+                                    },
+                                    function(response) {
 
                                     $("#nbgdrive-display").remove();
                                     $("#nbgdrive-link").remove();
-                                    $("#nbgdrive-button").remove(); 
+                                    $("#nbgdrive-button").remove();
 
                                     /* The key was valid and we have authenticated properly. */
                                     if (response.includes("User")) {
@@ -79,9 +85,9 @@ define([
         $('nbgdrive-authentication').after("      ");
     }
 
-    /* 
-     *  Makes a GET request to trigger the manual sync of the current directory 
-     *  to a pre-established Google Drive Sync Directory. 
+    /*
+     *  Makes a GET request to trigger the manual sync of the current directory
+     *  to a pre-established Google Drive Sync Directory.
      */
     var syncDriveFiles = function () {
         $.getJSON(utils.get_body_data('baseUrl') + 'syncDrive', function(data) {
@@ -90,8 +96,8 @@ define([
         });
     }
 
-    /* 
-     *  Periodically checks the system clock, syncing files at 3 AM. 
+    /*
+     *  Periodically checks the system clock, syncing files at 3 AM.
      */
     var checkAutosyncTime = function () {
         var date = new Date();
@@ -100,7 +106,7 @@ define([
         }
     }
 
-    /* 
+    /*
      *  Takes in a string URL and opens it in a new tab
      */
     var openAuthenticationInNewTab = function (url) {
@@ -108,7 +114,7 @@ define([
         win.focus();
     }
 
-    /* 
+    /*
      *  Creates the button to manually sync Google Drive.
      */
     var createManualSyncButton = function () {
@@ -123,10 +129,10 @@ define([
         var action_name = 'show-alert';
 
         var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
-        Jupyter.toolbar.add_buttons_group([full_action_name]);  
+        Jupyter.toolbar.add_buttons_group([full_action_name]);
     }
 
-    /* 
+    /*
      *  Retrieves Drive verification link and displays it to the user.
      */
     var displayDriveVerificationLink = function () {
@@ -153,11 +159,11 @@ define([
             } else {
                 createManualSyncButton();
             }
-        }); 
+        });
     }
 
     var load_ipython_extension = function () {
-        displayDriveVerificationLink();      
+        displayDriveVerificationLink();
     };
 
     return {
