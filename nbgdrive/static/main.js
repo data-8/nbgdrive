@@ -61,8 +61,6 @@ define([
                                             var display = String(data['status']);
                                         });
 
-                                        /* Start autosync function to background sync Google Drive. */
-                                        setInterval(checkAutosyncTime, 1000 * 60);
                                     } else {
                                         $('#maintoolbar-container').append(
                                             $('<div>').attr('id', 'nbgdrive-display')
@@ -97,13 +95,26 @@ define([
     }
 
     /*
-     *  Periodically checks the system clock, syncing files at 3 AM.
+     *  Check if it is time to sync files by comparing the current time to the time 
+     *  our files were synced and syncing if it has been more than 24 hours.
      */
-    var checkAutosyncTime = function () {
-        var date = new Date();
-        if (date.getHours() === 3  && date.getMinutes() === 0) {
-            syncDriveFiles();
-        }
+    var checkIfReadyToSync = function () {
+        $.getJSON(utils.get_body_data('baseUrl') + 'lastSyncTime', function(data) {
+            var date = new Date();
+            var lastSyncTime = String(data['lastSyncTime']);
+            var date_components = [date.getFullYear().toString(), "-", (date.getMonth() + 1).toString(), "-", date.getDate().toString()]
+
+            // Add a 0 in front of single digit months to match the date string
+            if (date.getMonth() < 10) {
+                date_components.splice(2, 0, "0");
+            }
+
+            var currentDate = date_components.join("");
+
+            if (currentDate !== lastSyncTime) {
+                syncDriveFiles();
+            }
+        });
     }
 
     /*
@@ -157,6 +168,7 @@ define([
                         )
                     );
             } else {
+                checkIfReadyToSync();
                 createManualSyncButton();
             }
         });

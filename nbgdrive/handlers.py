@@ -30,7 +30,6 @@ def make_gdrive_directory():
         'status' : sync_status
     }
 
-
 def verify_gdrive_user(auth_code):
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(auth_code)
@@ -66,6 +65,20 @@ def check_gdrive_authenticated():
         'authentication' : drive_authentication_url
     }
 
+def check_gdrive_last_sync_time():
+    lastSyncTime = "Drive has never been synced"
+
+    command = 'STORED_DIR="data8/$JPY_USER"; \
+               LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+               gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+    lastSyncTime = str(output, 'utf-8').split('\n')[0]
+
+    return {
+        'lastSyncTime' : lastSyncTime
+    }
+
 class SyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(sync_gdrive_directory()))
@@ -75,7 +88,6 @@ class DriveHandler(IPythonHandler):
         self.finish(json.dumps(make_gdrive_directory()))
 
 class ResponseHandler(IPythonHandler):
-
     def get(self):
         self.finish(json.dumps(check_gdrive_authenticated()))
 
@@ -83,13 +95,19 @@ class ResponseHandler(IPythonHandler):
         success = verify_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
+class LastSyncHandler(IPythonHandler):
+    def get(self):
+        self.finish(json.dumps(check_gdrive_last_sync_time()))
+
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
+    lastSync_route_pattern = url_path_join(web_app.settings['base_url'], '/lastSyncTime')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
-        (response_route_pattern, ResponseHandler)
+        (response_route_pattern, ResponseHandler),
+        (lastSync_route_pattern, LastSyncHandler)
     ])
