@@ -37,7 +37,7 @@ def verify_gdrive_user(auth_code):
 
 def sync_gdrive_directory():
     drive_authenticated = check_gdrive_authenticated()
-    sync_status = drive_authenticated['authentication']
+    sync_status = 'Could not sync data to Google Drive'
 
     if drive_authenticated['authentication'] == "authenticated":
         command = 'STORED_DIR="data8/$JPY_USER"; \

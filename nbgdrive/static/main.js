@@ -143,12 +143,6 @@ define([
         Jupyter.toolbar.add_buttons_group([full_action_name]);
     }
 
-    var testGetRequest = function () {
-        $.getJSON(utils.get_body_data('baseUrl') + 'testDrive', function(data) {
-            console.log(data['test']);
-        });
-    }
-
     /*
      *  Retrieves Drive verification link and displays it to the user.
      */
