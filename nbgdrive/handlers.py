@@ -19,9 +19,9 @@ def make_gdrive_directory():
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
                     DIR_EXISTS="$(gdrive list | grep -i $STORED_DIR | wc -l)"; \
-                    [ $DIR_EXISTS -lt 1 ] && (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload /home $ID) || echo "Directory already exists."; \
+                    [ $DIR_EXISTS -lt 1 ] && (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload /Users/jgong/Sync $ID) || echo "Directory already exists."; \
                     LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                    gdrive sync upload /home $LOAD_DIRECTORY'
+                    gdrive sync upload /Users/jgong/Sync $LOAD_DIRECTORY'
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
         sync_status = 'Created Sync Directory'
@@ -43,7 +43,7 @@ def sync_gdrive_directory():
     if drive_authenticated['authentication'] == "authenticated":
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                    gdrive sync upload /home $LOAD_DIRECTORY; \
+                    gdrive sync upload /Users/jgong/Sync $LOAD_DIRECTORY; \
                     echo "Syncing directory now."'
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
@@ -66,6 +66,22 @@ def check_gdrive_authenticated():
         'authentication' : drive_authentication_url
     }
 
+def check_last_sync_time():
+    console.log ("Called");
+    drive_authenticated = check_gdrive_authenticated()
+    output = 'Google Drive not yet authenticated'
+
+    if drive_authenticated['authentication'] == "authenticated":
+        command = 'STORED_DIR="data8/$JPY_USER"; \
+                   LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                   gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
+        p = Popen(command, stdout=PIPE, shell=True)
+        output, err = p.communicate()
+
+    return {
+        'last_sync_date' : output
+    }
+
 class SyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(sync_gdrive_directory()))
@@ -83,13 +99,20 @@ class ResponseHandler(IPythonHandler):
         success = verify_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
+class LastSyncedHandler(IPythonHandler):
+    
+    def get(self):
+        self.finish(json.dumps(check_last_sync_time()))
+
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
+    last_synced_route_pattern = url_path_join(web_app.settings['base_url'], '/checkLastSyncTime')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
-        (response_route_pattern, ResponseHandler)
+        (response_route_pattern, ResponseHandler),
+        (last_synced_route_pattern, LastSyncedHandler)
     ])
