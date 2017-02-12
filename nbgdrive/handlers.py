@@ -30,7 +30,6 @@ def make_gdrive_directory():
         'status' : sync_status
     }
 
-
 def verify_gdrive_user(auth_code):
     p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(auth_code)
@@ -38,7 +37,7 @@ def verify_gdrive_user(auth_code):
 
 def sync_gdrive_directory():
     drive_authenticated = check_gdrive_authenticated()
-    sync_status = 'Could not sync data to Google Drive'
+    sync_status = drive_authenticated['authentication']
 
     if drive_authenticated['authentication'] == "authenticated":
         command = 'STORED_DIR="data8/$JPY_USER"; \
@@ -66,20 +65,18 @@ def check_gdrive_authenticated():
         'authentication' : drive_authentication_url
     }
 
-def check_last_sync_time():
-    console.log ("Called");
-    drive_authenticated = check_gdrive_authenticated()
-    output = 'Google Drive not yet authenticated'
+def check_gdrive_last_sync_time():
+    lastSyncTime = "Drive has never been synced"
 
-    if drive_authenticated['authentication'] == "authenticated":
-        command = 'STORED_DIR="data8/$JPY_USER"; \
-                   LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                   gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
-        p = Popen(command, stdout=PIPE, shell=True)
-        output, err = p.communicate()
+    command = 'STORED_DIR="data8/$JPY_USER"; \
+               LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+               gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+    lastSyncTime = str(output, 'utf-8').split('\n')[0]
 
     return {
-        'last_sync_date' : output
+        'lastSyncTime' : lastSyncTime
     }
 
 class SyncHandler(IPythonHandler):
@@ -91,7 +88,6 @@ class DriveHandler(IPythonHandler):
         self.finish(json.dumps(make_gdrive_directory()))
 
 class ResponseHandler(IPythonHandler):
-
     def get(self):
         self.finish(json.dumps(check_gdrive_authenticated()))
 
@@ -99,20 +95,19 @@ class ResponseHandler(IPythonHandler):
         success = verify_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
-class LastSyncedHandler(IPythonHandler):
-    
+class LastSyncHandler(IPythonHandler):
     def get(self):
-        self.finish(json.dumps(check_last_sync_time()))
+        self.finish(json.dumps(check_gdrive_last_sync_time()))
 
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
-    last_synced_route_pattern = url_path_join(web_app.settings['base_url'], '/checkLastSyncTime')
+    lastSync_route_pattern = url_path_join(web_app.settings['base_url'], '/lastSyncTime')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
         (response_route_pattern, ResponseHandler),
-        (last_synced_route_pattern, LastSyncedHandler)
+        (lastSync_route_pattern, LastSyncHandler)
     ])

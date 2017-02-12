@@ -99,15 +99,19 @@ define([
      *  our files were synced and syncing if it has been more than 24 hours.
      */
     var checkIfReadyToSync = function () {
-        var date = new Date();
-        $.getJSON(utils.get_body_data('baseUrl') + 'checkLastSyncTime', function(data) {
-            var lastSyncTime = String(data['last_sync_date']);
-            var currentDate = date.getFullYear().toString() + "-" + (date.getMonth() + 1).toString() + "-" + date.getDate().toString();
-            console.log(lastSyncTime);
-            console.log(currentDate);
+        $.getJSON(utils.get_body_data('baseUrl') + 'lastSyncTime', function(data) {
+            var date = new Date();
+            var lastSyncTime = String(data['lastSyncTime']);
+            var date_components = [date.getFullYear().toString(), "-", (date.getMonth() + 1).toString(), "-", date.getDate().toString()]
+
+            // Add a 0 in front of single digit months to match the date string
+            if (date.getMonth() < 10) {
+                date_components.splice(2, 0, "0");
+            }
+
+            var currentDate = date_components.join("");
+
             if (currentDate !== lastSyncTime) {
-                // Time to sync
-                console.log("Synced");
                 syncDriveFiles();
             }
         });
@@ -139,6 +143,12 @@ define([
         Jupyter.toolbar.add_buttons_group([full_action_name]);
     }
 
+    var testGetRequest = function () {
+        $.getJSON(utils.get_body_data('baseUrl') + 'testDrive', function(data) {
+            console.log(data['test']);
+        });
+    }
+
     /*
      *  Retrieves Drive verification link and displays it to the user.
      */
@@ -164,7 +174,6 @@ define([
                         )
                     );
             } else {
-                // The user has authenticated, check to see if it is time to sync
                 checkIfReadyToSync();
                 createManualSyncButton();
             }
