@@ -45,13 +45,13 @@ define([
                                                     .addClass('btn-group')
                                                     .addClass('pull-right')
                                             .append(
-                                                $('<strong>').attr('id', 'ngdrive-authenticated-result')
+                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
                                                              .text('User authenticated!')
                                             )
                                         );
 
                                         /* Alert user that they've successfully authenticated. */
-                                        $( "#ngdrive-authenticated-result").fadeOut(4000);
+                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
 
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
@@ -67,12 +67,12 @@ define([
                                                     .addClass('btn-group')
                                                     .addClass('pull-right')
                                             .append(
-                                                $('<strong>').attr('id', 'ngdrive-authenticated-result')
+                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
                                                              .text('Your key was incorrect. Please try again!')
                                             )
                                         );
 
-                                        $("#ngdrive-authenticated-result").fadeOut(4000);
+                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
                                         setTimeout(displayDriveVerificationLink, 5000);
                                     }
                                 });
@@ -88,9 +88,32 @@ define([
      *  to a pre-established Google Drive Sync Directory.
      */
     var syncDriveFiles = function () {
+        $("#nbgdrive-display").remove();
+
+        // Let user know that their sync has started
+        $('#maintoolbar-container').append(
+            $('<div>').attr('id', 'nbgdrive-display')
+                    .addClass('btn-group')
+                    .addClass('pull-right')
+            .append(
+                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
+                             .text('Starting Google Drive Sync!')
+            )
+        );
+
         $.getJSON(utils.get_body_data('baseUrl') + 'syncDrive', function(data) {
             var display = String(data['status']);
-            console.log ("Current text: " + display);
+            console.log ("Sync status: " + display);
+
+            // Alert user if their sync was successful or not when result received
+            if (display.includes("Successfully")) {
+                display = "Sync successful!";
+            } else {
+                display = "Sync unsuccessful: Please try reauthenticating!";
+            }
+
+            $('#nbgdrive-authenticated-result').text(display);
+            $("#nbgdrive-authenticated-result").fadeOut(4000);
         });
     }
 
