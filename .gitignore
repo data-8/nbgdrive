@@ -1,0 +1,6 @@
+#Ignore iPython Notebooks that might have been created for testing purposes
+*.ipynb
+.ipynb_checkpoints
+
+#Ignore all Jetbrains-related files
+.idea/*
