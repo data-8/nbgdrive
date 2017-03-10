@@ -3,4 +3,4 @@
 .ipynb_checkpoints
 
 #Ignore all Jetbrains-related files
-.idea/*
+.idea/

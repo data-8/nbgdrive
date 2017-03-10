@@ -97,7 +97,7 @@ define([
                     .addClass('pull-right')
             .append(
                 $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                             .text('Starting Google Drive Sync!')
+                             .text('Syncing to Google Drive...')
             )
         );
 
@@ -118,7 +118,7 @@ define([
     }
 
     /*
-     *  Check if it is time to sync files by comparing the current time to the time 
+     *  Check if it is time to sync files by comparing the current time to the time
      *  our files were synced and syncing if it has been more than 24 hours.
      */
     var checkIfReadyToSync = function () {
