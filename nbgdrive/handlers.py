@@ -6,7 +6,7 @@ from notebook.base.handlers import IPythonHandler
 # This nbextension makes a few assumptions that may need to be handled at a later time.
 # They are stated below:
 
-# 1. When running on each singleuser, there is a non-empty config variable called $JPY_USER with their unique identification
+# 1. When running on each singleuser, there is a non-empty config variable called JPY_USER with their unique identification
 # 2. We will allow this extension to create a sync directory from the single user's home directory to data8/$JPY_USER
 # 3. File deleted locally are not syncable to the sync directory, this is a bug we must fix
 # 4. The /home directory contains just one folder, called `jovyan`, which is the standard student working directory
