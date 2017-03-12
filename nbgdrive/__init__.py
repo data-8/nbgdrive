@@ -11,6 +11,12 @@ def _jupyter_nbextension_paths():
         "dest": "nbgdrive",
         "src": "static",
         "require": "nbgdrive/main"
+    },
+    {
+        "section":"tree",
+        "src":"static",
+        "dest":"nbgdrive",
+        "require":"nbgdrive/tree"
     }]
 
 def load_jupyter_server_extension(nbapp):

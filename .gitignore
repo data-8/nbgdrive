@@ -4,3 +4,5 @@
 
 #Ignore all Jetbrains-related files
 .idea/
+
+.DS_Store

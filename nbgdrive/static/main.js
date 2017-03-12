@@ -1,3 +1,5 @@
+
+
 define([
     'jquery',
     'base/js/utils',
@@ -8,6 +10,8 @@ define([
     /*
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
+    console.log("asfadsfds");
+
     function createDisplayDiv() {
         /* Remove the link elements. */
         $("#nbgdrive-display").remove()
