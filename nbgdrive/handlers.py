@@ -27,7 +27,8 @@ def create_sync_directory():
     if user_is_authenticated():
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
-                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload ' + SYNC_DIRECTORY + ' $ID) || echo "Directory already exists.";'
+                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";'\
+                    .format(SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
         sync_status = 'Successfully created Sync Directory'
@@ -43,8 +44,8 @@ def sync_gdrive_directory():
 
     command = 'STORED_DIR="data8/$JPY_USER"; \
                 LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                gdrive sync upload ' + SYNC_DIRECTORY + ' $LOAD_DIRECTORY; \
-                echo "Syncing directory now."'
+                gdrive sync upload {} $LOAD_DIRECTORY; \
+                echo "Syncing directory now."'.format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     sync_status = 'Successfully synced data to Google Drive'
