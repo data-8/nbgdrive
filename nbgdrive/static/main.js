@@ -60,6 +60,9 @@ define([
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
 
+                                        /* Add a button to allow to logout from gdrive. */
+                                        createLogoutButton();
+
                                         /* GET Request to alert Server to create a sync directory. */
                                         $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
@@ -170,6 +173,39 @@ define([
         Jupyter.toolbar.add_buttons_group([full_action_name]);
     }
 
+    var gdriveLogout = function () {
+
+        $.getJSON(utils.get_body_data('baseUrl') + 'gdriveLogout', function(data) {
+            var display = String(data['status']);
+
+            // Alert user if their sync was successful or not when result received
+            if (display.includes("success")) {
+                display = "Logout successful!";
+            } else {
+                display = "Logout unsuccessful";
+            }
+
+            $('#nbgdrive-authenticated-result').text(display);
+            $("#nbgdrive-authenticated-result").fadeOut(4000);
+            location.reload();
+        });
+    }
+
+    var createLogoutButton = function () {
+        var action = {
+            icon: 'fa-sign-out', // a font-awesome class used on buttons, etc
+            help    : 'Logout from Google Drive Sync',
+            help_index : 'zz',
+            handler : gdriveLogout
+        }
+
+        var prefix = 'gsync_extension';
+        var action_name = 'show-alert';
+
+        var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
+        Jupyter.toolbar.add_buttons_group([full_action_name]);
+    }
+
     /*
      *  Retrieves Drive verification link and displays it to the user.
      */
@@ -197,6 +233,7 @@ define([
             } else {
                 checkIfReadyToSync();
                 createManualSyncButton();
+                createLogoutButton();
             }
         });
     }

@@ -27,11 +27,11 @@ def create_sync_directory():
     if user_is_authenticated():
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
-                    DIR_EXISTS="$(gdrive list | grep -i $STORED_DIR | wc -l)"; \
-                    [ $DIR_EXISTS -lt 1 ] && (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload ' + SYNC_DIRECTORY + ' $ID) || echo "Directory already exists.";'
+                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";'\
+                    .format(SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
-        sync_status = 'Created Sync Directory'
+        sync_status = 'Successfully created Sync Directory'
 
     return {
         'status': sync_status
@@ -44,8 +44,8 @@ def sync_gdrive_directory():
 
     command = 'STORED_DIR="data8/$JPY_USER"; \
                 LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                gdrive sync upload ' + SYNC_DIRECTORY + ' $LOAD_DIRECTORY; \
-                echo "Syncing directory now."'
+                gdrive sync upload {} $LOAD_DIRECTORY; \
+                echo "Syncing directory now."'.format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     sync_status = 'Successfully synced data to Google Drive'
@@ -55,16 +55,15 @@ def sync_gdrive_directory():
     }
 
 
-def sync_directory_exists():
-    """Returns whether the sync directory already exists in the user's Google Drive"""
-    command = 'STORED_DIR="data8/$JPY_USER"; \
-                DIR_EXISTS="$(gdrive list | grep -i $STORED_DIR | wc -l)"; \
-                echo $DIR_EXISTS'
+def logout_form_gdrive():
+    """Revoke gdrive permissions"""
+    command = 'find ~/.gdrive -name \*.json -delete'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
 
-    utf_output = str(output, 'utf-8')
-    return False if '0' in utf_output else True
+    return {
+        'status': 'success'
+    }
 
 
 def user_is_authenticated():
@@ -144,15 +143,22 @@ class LastSyncHandler(IPythonHandler):
         self.finish(json.dumps(check_gdrive_last_sync_time()))
 
 
+class LogoutHandler(IPythonHandler):
+    def get(self):
+        self.finish(json.dump(logout_form_gdrive()))
+
+
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
     last_sync_route_pattern = url_path_join(web_app.settings['base_url'], '/lastSyncTime')
+    logout_route_pattern = url_path_join(web_app.settings['base_url'], '/gdriveLogout')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
         (response_route_pattern, ResponseHandler),
-        (last_sync_route_pattern, LastSyncHandler)
+        (last_sync_route_pattern, LastSyncHandler),
+        (logout_route_pattern, LogoutHandler)
     ])
