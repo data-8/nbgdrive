@@ -55,7 +55,7 @@ def sync_gdrive_directory():
     }
 
 
-def logout_form_gdrive():
+def logout_from_gdrive():
     """Revoke gdrive permissions"""
     command = 'find ~/.gdrive -name \*.json -delete'
     p = Popen(command, stdout=PIPE, shell=True)
@@ -145,7 +145,7 @@ class LastSyncHandler(IPythonHandler):
 
 class LogoutHandler(IPythonHandler):
     def get(self):
-        self.finish(json.dump(logout_form_gdrive()))
+        self.finish(json.dumps(logout_from_gdrive()))
 
 
 def setup_handlers(web_app):
