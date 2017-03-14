@@ -24,7 +24,7 @@ def create_sync_directory():
     """
     sync_status = 'Could not create sync Directory.'
 
-    if user_is_authenticated():
+    if _user_is_authenticated():
         command = 'STORED_DIR="data8/$JPY_USER"; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
                     (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";'\
@@ -42,8 +42,11 @@ def sync_gdrive_directory():
     """Syncs local files to Google Drive sync folder"""
     sync_status = 'Could not sync data to Google Drive'
 
+    if not _remote_sync_directory_exists():
+        create_sync_directory()
+
     command = 'STORED_DIR="data8/$JPY_USER"; \
-                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 gdrive sync upload {} $LOAD_DIRECTORY; \
                 echo "Syncing directory now."'.format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
@@ -53,7 +56,6 @@ def sync_gdrive_directory():
     return {
         'status': sync_status
     }
-
 
 def logout_from_gdrive():
     """Revoke gdrive permissions"""
@@ -65,36 +67,16 @@ def logout_from_gdrive():
         'status': 'success'
     }
 
-
-def user_is_authenticated():
-    """Checks if user is authenticated"""
-    cleaned_response = get_gdrive_auth_url()
-
-    # If there is a URL in the response, the user still has to authenticate
-    return False if 'http' in cleaned_response else True
-
-
 def check_gdrive_authenticated():
     """Returns gdrive authentication status"""
-    if user_is_authenticated():
+    if _user_is_authenticated():
         drive_authentication_url = "authenticated"
     else:
-        drive_authentication_url = get_gdrive_auth_url()
+        drive_authentication_url = _get_gdrive_auth_url()
 
     return {
         'authentication': drive_authentication_url
     }
-
-
-def get_gdrive_auth_url():
-    """Returns the URL for the user to authenticate iff user needs to authenticate"""
-    p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output, err = p.communicate('')
-
-    # This is the only part of the response we are interested in
-    cleaned_response = str(output, 'utf-8').split('\n')[2]
-    return cleaned_response
-
 
 def authenticate_gdrive_user(auth_code):
     """Authenticates gdrive user"""
@@ -108,7 +90,7 @@ def check_gdrive_last_sync_time():
     lastSyncTime = "Drive has never been synced"
 
     command = 'STORED_DIR="data8/$JPY_USER"; \
-               LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+               LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
@@ -117,6 +99,37 @@ def check_gdrive_last_sync_time():
     return {
         'lastSyncTime': lastSyncTime
     }
+
+
+def _remote_sync_directory_exists():
+    """Checks to make sure remote sync drive folder exists"""
+    command = 'STORED_DIR="data8/$JPY_USER"; \
+                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                if [ -z "$LOAD_DIRECTORY" ]; \
+                then echo "Remote directory not found"; \
+                else echo "Found remote directory"; \
+                fi'
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+    return True if "Found remote directory" in output.decode("utf-8") else False
+
+
+def _user_is_authenticated():
+    """Checks if user is authenticated"""
+    cleaned_response = _get_gdrive_auth_url()
+
+    # If there is a URL in the response, the user still has to authenticate
+    return False if 'http' in cleaned_response else True
+
+
+def _get_gdrive_auth_url():
+    """Returns the URL for the user to authenticate iff user needs to authenticate"""
+    p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = p.communicate('')
+
+    # This is the only part of the response we are interested in
+    cleaned_response = str(output, 'utf-8').split('\n')[2]
+    return cleaned_response
 
 
 class SyncHandler(IPythonHandler):
