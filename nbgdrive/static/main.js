@@ -169,7 +169,7 @@ define([
         var prefix = 'gsync_extension';
         var action_name = 'show-alert';
 
-        var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
+        var full_action_name = Jupyter.actions.register(action, action_name, prefix); // returns 'my_extension:show-alert'
         Jupyter.toolbar.add_buttons_group([full_action_name]);
     }
 

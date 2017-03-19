@@ -57,6 +57,9 @@ define([
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
 
+                                        /* Add a button to allow to logout from gdrive. */
+                                        createLogoutButton();
+
                                         /* GET Request to alert Server to create a sync directory. */
                                         $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
@@ -153,19 +156,46 @@ define([
      *  Creates the button to manually sync Google Drive.
      */
     var createManualSyncButton = function () {
-        var action = {
-            icon: 'fa-cloud', // a font-awesome class used on buttons, etc
-            help    : 'Manually syncs the home directory with Google Drive',
-            help_index : 'zz',
-            handler : syncDriveFiles
-        }
+        console.log("Created sync button");
 
-        var prefix = 'gsync_extension';
-        var action_name = 'show-alert';
-
-        //var full_action_name = Jupyter.actions.register(action, name, prefix); // returns 'my_extension:show-alert'
-        //Jupyter.toolbar.add_buttons_group([full_action_name]);
+        $('#notebook_toolbar .pull-right').prepend(
+             $('<div>').addClass('btn-group').prepend(
+                  '<button class="btn btn-xs btn-default" title="Sync with GDrive"><i class="fa-cloud fa"></i></button>'
+             ).click(
+                  syncDriveFiles
+             )
+        );
     }
+
+   var gdriveLogout = function () {
+
+       $.getJSON(utils.get_body_data('baseUrl') + 'gdriveLogout', function(data) {
+           var display = String(data['status']);
+
+           // Alert user if their sync was successful or not when result received
+           if (display.includes("success")) {
+               display = "Logout successful!";
+           } else {
+               display = "Logout unsuccessful";
+           }
+
+           $('#nbgdrive-authenticated-result').text(display);
+           $("#nbgdrive-authenticated-result").fadeOut(4000);
+           location.reload();
+       });
+   }
+
+   var createLogoutButton = function () {
+       console.log("Created logout button");
+
+       $('#notebook_toolbar .pull-right').prepend(
+            $('<div>').addClass('btn-group').prepend(
+                 '<button class="btn btn-xs btn-default" title="Logout from GDrive"><i class="fa-sign-out fa"></i></button>'
+            ).click(
+                 gdriveLogout
+            )
+       );
+   }
 
     /*
      *  Retrieves Drive verification link and displays it to the user.
@@ -194,6 +224,7 @@ define([
             } else {
                 checkIfReadyToSync();
                 createManualSyncButton();
+                createLogoutButton();
             }
         });
     }
