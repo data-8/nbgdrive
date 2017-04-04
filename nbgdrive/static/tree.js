@@ -8,6 +8,17 @@ define([
     /*
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
+    function randomTest() {
+         createManualSyncButton();
+         createManualPullButton();
+         createLogoutButton();
+         createManualSyncButton();
+         createManualPullButton();
+         createLogoutButton();
+         createManualSyncButton();
+         createManualPullButton();
+         createLogoutButton();
+    }
 
     function createDisplayDiv() {
         /* Remove the link elements. */
@@ -53,6 +64,8 @@ define([
 
                                         /* Alert user that they've successfully authenticated. */
                                         $("#nbgdrive-authenticated-result").fadeOut(4000);
+
+                                        createButtonGroup();
 
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
@@ -161,7 +174,7 @@ define([
     var createManualSyncButton = function () {
         console.log("Created sync button");
 
-        $('#notebook_toolbar .pull-right').prepend(
+        $('#nbgdrive-button-group').prepend(
              $('<div>').addClass('btn-group').prepend(
                   '<button class="btn btn-xs btn-default" title="Sync with GDrive"><i class="fa-cloud fa"></i></button>'
              ).click(
@@ -191,7 +204,7 @@ define([
    var createLogoutButton = function () {
        console.log("Created logout button");
 
-       $('#notebook_toolbar .pull-right').prepend(
+       $('#nbgdrive-button-group').prepend(
             $('<div>').addClass('btn-group').prepend(
                  '<button class="btn btn-xs btn-default" title="Logout from GDrive"><i class="fa-sign-out fa"></i></button>'
             ).click(
@@ -204,7 +217,7 @@ define([
  var createManualPullButton = function () {
      console.log("Created gdrive pull button");
 
-     $('#notebook_toolbar .pull-right').prepend(
+     $('#nbgdrive-button-group').prepend(
           $('<div>').addClass('btn-group').prepend(
                '<button class="btn btn-xs btn-default" title="Pull from GDrive"><i class="fa-cloud-download fa"></i></button>'
           ).click(
@@ -212,6 +225,12 @@ define([
           )
      );
  }
+
+ var createButtonGroup = function() {
+      console.log("Created button group");
+
+      $('#notebook_toolbar .pull-right').prepend($('<span>')).attr('id', 'nbgdrive-button-group');
+}
 
     /*
      *  Retrieves Drive verification link and displays it to the user.
@@ -239,6 +258,7 @@ define([
                     );
             } else {
                 checkIfReadyToSync();
+                createButtonGroup();
                 createManualSyncButton();
                 createManualPullButton();
                 createLogoutButton();
@@ -248,6 +268,7 @@ define([
 
     var load_ipython_extension = function () {
         displayDriveVerificationLink();
+        // randomTest();
     };
 
     return {
