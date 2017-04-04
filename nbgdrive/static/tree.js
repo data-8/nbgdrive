@@ -57,6 +57,9 @@ define([
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
 
+                                        /* Add a button to allow pulling from gdrive. */
+                                        createManualPullButton();
+
                                         /* Add a button to allow to logout from gdrive. */
                                         createLogoutButton();
 
@@ -197,6 +200,19 @@ define([
        );
    }
 
+
+ var createManualPullButton = function () {
+     console.log("Created gdrive pull button");
+
+     $('#notebook_toolbar .pull-right').prepend(
+          $('<div>').addClass('btn-group').prepend(
+               '<button class="btn btn-xs btn-default" title="Pull from GDrive"><i class="fa-cloud-download fa"></i></button>'
+          ).click(
+               // gDrivePull function
+          )
+     );
+ }
+
     /*
      *  Retrieves Drive verification link and displays it to the user.
      */
@@ -224,6 +240,7 @@ define([
             } else {
                 checkIfReadyToSync();
                 createManualSyncButton();
+                createManualPullButton();
                 createLogoutButton();
             }
         });
