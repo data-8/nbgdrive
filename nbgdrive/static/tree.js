@@ -235,8 +235,8 @@ define([
                                           _xsrf: r ? r[1] : undefined
                                       },
                                       function(response) {
-                                          console.log(response);
-                                          if (response.includes("User")) {
+                                          console.log(JSON.stringify(response));
+                                          if (!response.includes('error')) {
                                                $('#notebook_toolbar').append(
                                                    $('<div>').attr('id', 'nbgdrive-display')
                                                            .addClass('btn-group')
