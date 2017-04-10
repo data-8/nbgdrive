@@ -213,24 +213,78 @@ define([
        );
    }
 
+   var gDrivePull = function() {
+        $("#nbgdrive-display").remove()
 
- var createManualPullButton = function () {
-     console.log("Created gdrive pull button");
+        $('#notebook_toolbar').append(
+            $('<div>').attr('id', 'nbgdrive-display')
+                      .addClass('btn-group')
+                      .addClass('pull-right')
+            .append(
+                $('<input>').attr('id', 'nbgdrive-pull-id')
+                           .attr('type', 'text')
+            ).append(
+                $('<button>').attr('id', 'nbgdrive-pull-button')
+                             .text('Download from GDrive Path')
+                             .click(function() {
+                                  var gdrive_pull_path = $("#nbgdrive-pull-id").val();
+                                  var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+                                  $.post(utils.get_body_data('baseUrl') + 'gdrivePull',
+                                      {
+                                          message: gdrive_pull_path,
+                                          _xsrf: r ? r[1] : undefined
+                                      },
+                                      function(response) {
+                                          console.log(response);
+                                          if (response.includes("User")) {
+                                               $('#notebook_toolbar').append(
+                                                   $('<div>').attr('id', 'nbgdrive-display')
+                                                           .addClass('btn-group')
+                                                           .addClass('pull-right')
+                                                   .append(
+                                                      $('<strong>').attr('id', 'nbgdrive-pull-result')
+                                                                   .text('Pulled from GDrive successfully!')
+                                                   )
+                                               );
 
-     $('#nbgdrive-button-group').prepend(
-          $('<div>').addClass('btn-group').prepend(
-               '<button class="btn btn-xs btn-default" title="Pull from GDrive"><i class="fa-cloud-download fa"></i></button>'
-          ).click(
-               // gDrivePull function
-          )
-     );
- }
+                                               /* Alert user that they've successfully authenticated. */
+                                               $("#nbgdrive-pull-result").fadeOut(4000);
+                                          } else {
+                                              $('#notebook_toolbar').append(
+                                                  $('<div>').attr('id', 'nbgdrive-display')
+                                                          .addClass('btn-group')
+                                                          .addClass('pull-right')
+                                                  .append(
+                                                      $('<strong>').attr('id', 'nbgdrive-pull-result')
+                                                                   .text('Your inputed path was incorrect. Please try again!')
+                                                  )
+                                              );
 
- var createButtonGroup = function() {
-      console.log("Created button group");
+                                              $("#nbgdrive-pull-result").fadeOut(4000);
+                                          }
+                                      });
+                             })
+                        )
+            );
+   }
 
-      $('#notebook_toolbar .pull-right').prepend($('<span>')).attr('id', 'nbgdrive-button-group');
-}
+   var createManualPullButton = function () {
+       console.log("Created gdrive pull button");
+
+       $('#nbgdrive-button-group').prepend(
+            $('<div>').addClass('btn-group').prepend(
+                 '<button class="btn btn-xs btn-default" title="Pull from GDrive"><i class="fa-cloud-download fa"></i></button>'
+            ).click(
+                 gDrivePull
+            )
+       );
+   }
+
+   var createButtonGroup = function() {
+        console.log("Created button group");
+
+        $('#notebook_toolbar .pull-right').prepend($('<span>')).attr('id', 'nbgdrive-button-group');
+   }
 
     /*
      *  Retrieves Drive verification link and displays it to the user.

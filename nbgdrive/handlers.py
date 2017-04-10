@@ -132,6 +132,57 @@ def _get_gdrive_auth_url():
     return cleaned_response
 
 
+def pull_from_gdrive(pull_id):
+    """Pulls the directory associated with the path from user's gdrive"""
+    try:
+        print('pull_id: ' + pull_id)
+        gdrive_folders = pull_id.split('/')
+        dir_ids = gdrive_puller(gdrive_folders, "root")
+        print(dir_ids)
+        if dir_ids == 'error':
+            return {
+                'status': 'error',
+                'message': 'directory does not exist'
+            }
+        for d in dir_ids:
+            command = 'gdrive download -r ' + d
+            p = Popen(command, stdout=PIPE, shell=True)
+            output, err = p.communicate()
+        return {
+            'status': 'success'
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e)
+        }
+
+
+def gdrive_puller(pull_folders, parent):
+    gdrive_name = pull_folders[0]
+    command = "gdrive_id -q 'trashed = false and mimeType = \"application/vnd.google-apps.folder\" and name = \"" + gdrive_name + "\" and \"" + parent + "\" in parents' | sed -n '2,$p' | awk '{print $1}'"
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+    folders = output.splitlines()
+    print('folders: ' + folders)
+
+    if len(folders) == 0:
+        return 'error'
+    elif len(pull_folders) == 1:
+        ids = []
+        for f in folders:
+            ids.append(f)
+        return ids
+    else:
+        results = []
+        for f in folders:
+            results.append(pull_from_gdrive_helper(pull_folders[1:], f))
+        if all([x == 'error' for x in results]):
+            return 'error'
+        else:
+            return [x != 'error' for x in results][0]
+
+
 class SyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(sync_gdrive_directory()))
@@ -161,17 +212,25 @@ class LogoutHandler(IPythonHandler):
         self.finish(json.dumps(logout_from_gdrive()))
 
 
+class PullHandler(IPythonHandler):
+    def post(self):
+        success = pull_from_gdrive(self.get_body_argument("message"))
+        self.finish(json.dumps(success))
+
+
 def setup_handlers(web_app):
     dir_route_pattern = url_path_join(web_app.settings['base_url'], '/createDrive')
     sync_route_pattern = url_path_join(web_app.settings['base_url'], '/syncDrive')
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
     last_sync_route_pattern = url_path_join(web_app.settings['base_url'], '/lastSyncTime')
     logout_route_pattern = url_path_join(web_app.settings['base_url'], '/gdriveLogout')
+    pull_route_pattern = url_path_join(web_app.settings['base_url'], '/gdrivePull')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
         (response_route_pattern, ResponseHandler),
         (last_sync_route_pattern, LastSyncHandler),
-        (logout_route_pattern, LogoutHandler)
+        (logout_route_pattern, LogoutHandler),
+        (pull_route_pattern, PullHandler)
     ])
