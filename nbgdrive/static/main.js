@@ -62,6 +62,16 @@ define([
                                         createLogoutButton();
 
                                         /* GET Request to alert Server to create a sync directory. */
+                                        var path = 'data9/micah'
+                                        var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+
+                                        $.post(utils.get_body_data('baseUrl') + 'setGDriveFolder',
+                                            {
+                                            message: path,
+                                            _xsrf: r ? r[1] : undefined
+                                            },
+                                            function(response) {});
+
                                         $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
                                         });
