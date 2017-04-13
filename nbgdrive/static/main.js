@@ -10,8 +10,6 @@ define([
     /*
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
-    console.log("asfadsfds");
-
     function createDisplayDiv() {
         /* Remove the link elements. */
         $("#nbgdrive-display").remove()
@@ -141,7 +139,7 @@ define([
 
             var currentDate = date_components.join("");
 
-            if (currentDate !== lastSyncTime) {
+            if (currentDate !== lastSyncTime && lastSyncTime) {
                 syncDriveFiles();
             }
         });
