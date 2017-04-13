@@ -42,4 +42,4 @@ To fix any such issue, it's recommended to log out (through the logout button ne
 
 ![Blueprint Banner](https://cloud.githubusercontent.com/assets/2468904/11998649/8a12f970-aa5d-11e5-8dab-7eef0766c793.png)
 
-This project was worked on in close collaboration with Cal Blueprint. Cal Blueprint is a student-run UC Berkeley organization devoted to matching the skills of its members to our desire to see social good enacted in our community. Each semester, teams of 4-5 students work closely with a non-profit to bring technological solutions to the problems they face every day.
+This project was worked on in close collaboration with **[Cal Blueprint](http://www.calblueprint.org/)**. Cal Blueprint is a student-run UC Berkeley organization devoted to matching the skills of its members to our desire to see social good enacted in our community. Each semester, teams of 4-5 students work closely with a non-profit to bring technological solutions to the problems they face every day.
