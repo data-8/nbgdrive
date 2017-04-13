@@ -3,14 +3,6 @@ from subprocess import Popen, PIPE
 from notebook.utils import url_path_join
 from notebook.base.handlers import IPythonHandler
 
-# This nbextension makes a few assumptions that may need to be handled at a later time.
-# They are stated below:
-
-# 1. When running on each singleuser, there is a non-empty config variable called JPY_USER with their unique identification
-# 2. We will allow this extension to create a sync directory from the single user's home directory to data8/$JPY_USER
-# 3. File deleted locally are not syncable to the sync directory, this is a bug we must fix
-# 4. The /home directory contains just one folder, called `jovyan`, which is the standard student working directory
-
 SYNC_DIRECTORY = "/home/jovyan"
 
 
@@ -18,11 +10,10 @@ def create_sync_directory():
     """
      Creates a gdrive sync directory in Google Drive and initializes the syncing process by performing the first sync.
      The first sync is different compared to every subsequent sync given that the gdrive directory ID must be retrieved.
-
      TODO: Give feedback that during this step it is already syncing and/or prevent user from syncing manually
      TODO: Try to abstract away the idea of the first sync being different from the others
     """
-    sync_status = 'Could not create sync Directory.'
+    create_dir_status = 'Could not create Sync Directory'
 
     if _user_is_authenticated():
         command = 'STORED_DIR="data8/$JPY_USER"; \
@@ -31,10 +22,10 @@ def create_sync_directory():
                     .format(SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
-        sync_status = 'Successfully created Sync Directory'
+        create_dir_status = 'Successfully created Sync Directory' if not err else create_dir_status
 
     return {
-        'status': sync_status
+        'status': create_dir_status
     }
 
 
@@ -51,7 +42,7 @@ def sync_gdrive_directory():
                 echo "Syncing directory now."'.format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
-    sync_status = 'Successfully synced data to Google Drive'
+    sync_status = 'Successfully synced data to Google Drive' if not err else sync_status
 
     return {
         'status': sync_status
@@ -59,24 +50,46 @@ def sync_gdrive_directory():
 
 def logout_from_gdrive():
     """Revoke gdrive permissions"""
+    logout_status = 'Unable to log out from Jupyter Google Drive Sync'
+
     command = 'find ~/.gdrive -name \*.json -delete'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
+    logout_status = 'Success' if not err else logout_status
 
     return {
-        'status': 'success'
+        'status': logout_status
     }
+
+
+def user_is_authenticated():
+    """Checks if user is authenticated"""
+    return False if 'http' in get_gdrive_auth_url() else True
+
 
 def check_gdrive_authenticated():
     """Returns gdrive authentication status"""
-    if _user_is_authenticated():
-        drive_authentication_url = "authenticated"
-    else:
-        drive_authentication_url = _get_gdrive_auth_url()
+    drive_authentication_url = "authenticated" if user_is_authenticated() else get_gdrive_auth_url()
 
     return {
         'authentication': drive_authentication_url
     }
+
+
+def get_gdrive_auth_url():
+    """Returns the URL for the user to authenticate iff user needs to authenticate"""
+    auth_url_or_status = ''
+    p = Popen(['gdrive', 'about'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = p.communicate('')
+
+    # This is the only part of the response we are interested in
+    try:
+        auth_url_or_status = str(output, 'utf-8').split('\n')[2]
+    except Exception:
+        pass
+
+    return auth_url_or_status
+
 
 def authenticate_gdrive_user(auth_code):
     """Authenticates gdrive user"""
@@ -87,14 +100,18 @@ def authenticate_gdrive_user(auth_code):
 
 def check_gdrive_last_sync_time():
     """Returns the time of the last sync"""
-    lastSyncTime = "Drive has never been synced"
+    lastSyncTime = ''
 
     command = 'STORED_DIR="data8/$JPY_USER"; \
                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
-    lastSyncTime = str(output, 'utf-8').split('\n')[0]
+
+    try:
+        lastSyncTime = str(output, 'utf-8').split('\n')[0]
+    except Exception:
+        pass
 
     return {
         'lastSyncTime': lastSyncTime
@@ -136,11 +153,9 @@ class SyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(sync_gdrive_directory()))
 
-
 class DriveHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(create_sync_directory()))
-
 
 class ResponseHandler(IPythonHandler):
     def get(self):
@@ -150,11 +165,9 @@ class ResponseHandler(IPythonHandler):
         success = authenticate_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
-
 class LastSyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(check_gdrive_last_sync_time()))
-
 
 class LogoutHandler(IPythonHandler):
     def get(self):
