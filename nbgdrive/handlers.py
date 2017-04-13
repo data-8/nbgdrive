@@ -11,7 +11,7 @@ from notebook.base.handlers import IPythonHandler
 # 3. File deleted locally are not syncable to the sync directory, this is a bug we must fix
 # 4. The /home directory contains just one folder, called `jovyan`, which is the standard student working directory
 
-SYNC_DIRECTORY = "."
+SYNC_DIRECTORY = "/home/jovyan"
 
 
 def create_sync_directory():

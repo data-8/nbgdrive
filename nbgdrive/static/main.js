@@ -10,7 +10,6 @@ define([
     /*
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
-    console.log("asfadsfds");
 
     function createDisplayDiv() {
         /* Remove the link elements. */
@@ -72,11 +71,7 @@ define([
                                             message: path,
                                             _xsrf: r ? r[1] : undefined
                                             },
-                                            function(response) {
-
-                                                console.log("asfadsfds");
-
-                                            });
+                                            function(response) {});
 
                                         $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
