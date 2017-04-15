@@ -9,12 +9,12 @@ def _jupyter_nbextension_paths():
     return [{
         "section": "notebook",
         "dest": "nbgdrive",
-        "src": "static",
+        "src": "static/main.js",
         "require": "nbgdrive/main"
     },
     {
         "section":"tree",
-        "src":"static",
+        "src":"static/tree.js",
         "dest":"nbgdrive",
         "require":"nbgdrive/tree"
     }]
