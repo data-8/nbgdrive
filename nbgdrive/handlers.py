@@ -174,7 +174,7 @@ def pull_from_gdrive(pull_id):
         }
 
 
-def __gdrive_puller(pull_folders, parent):
+def _gdrive_puller(pull_folders, parent):
     gdrive_name = pull_folders[0]
     command = "gdrive list -q 'trashed = false and \
             mimeType = \"application/vnd.google-apps.folder\" \
