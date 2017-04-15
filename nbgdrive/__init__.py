@@ -8,14 +8,14 @@ def _jupyter_server_extension_paths():
 def _jupyter_nbextension_paths():
     return [{
         "section": "notebook",
-        "dest": "nbgdrive",
+        "dest": "nbgdrive/main.js",
         "src": "static/main.js",
         "require": "nbgdrive/main"
     },
     {
         "section":"tree",
         "src":"static/tree.js",
-        "dest":"nbgdrive",
+        "dest":"nbgdrive/tree.js",
         "require":"nbgdrive/tree"
     }]
 
