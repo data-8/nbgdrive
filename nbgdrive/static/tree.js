@@ -54,18 +54,23 @@ define([
                                         /* Alert user that they've successfully authenticated. */
                                         $("#nbgdrive-authenticated-result").fadeOut(4000);
 
-                                        createButtonGroup();
-
                                         /* Add a button to allow to manually sync their Drive files. */
                                         createManualSyncButton();
-
-                                        /* Add a button to allow pulling from gdrive. */
-                                        createManualPullButton();
 
                                         /* Add a button to allow to logout from gdrive. */
                                         createLogoutButton();
 
                                         /* GET Request to alert Server to create a sync directory. */
+                                        var path = 'default-name'
+                                        var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+
+                                        $.post(utils.get_body_data('baseUrl') + 'setGDriveFolder',
+                                            {
+                                            message: path,
+                                            _xsrf: r ? r[1] : undefined
+                                            },
+                                            function(response) {});
+
                                         $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
                                             var display = String(data['status']);
                                         });

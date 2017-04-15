@@ -16,7 +16,7 @@ def create_sync_directory():
     create_dir_status = 'Could not create Sync Directory'
 
     if _user_is_authenticated():
-        command = 'STORED_DIR="data8/$JPY_USER"; \
+        command = 'STORED_DIR=$(<.syncdirectory.txt); \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
                     (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";'\
                     .format(SYNC_DIRECTORY)
@@ -32,8 +32,9 @@ def create_sync_directory():
 def logout_from_gdrive():
     """Revoke gdrive permissions"""
     logout_status = 'Unable to log out from Jupyter Google Drive Sync'
+    command = 'find ./.syncdirectory.txt -delete; \
+              find ~/.gdrive -name \*.json -delete'
 
-    command = 'find ~/.gdrive -name \*.json -delete'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     logout_status = 'Success' if not err else logout_status
@@ -63,8 +64,8 @@ def check_gdrive_last_sync_time():
     """Returns the time of the last sync"""
     lastSyncTime = ''
 
-    command = 'STORED_DIR="data8/$JPY_USER"; \
-               LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+    command = 'STORED_DIR=$(<.syncdirectory.txt); \
+               LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
@@ -78,6 +79,7 @@ def check_gdrive_last_sync_time():
         'lastSyncTime': lastSyncTime
     }
 
+
 def sync_gdrive_directory():
     """Syncs local files to Google Drive sync folder"""
     sync_status = 'Could not sync data to Google Drive'
@@ -85,7 +87,7 @@ def sync_gdrive_directory():
     if not _remote_sync_directory_exists():
         create_sync_directory()
 
-    command = 'STORED_DIR="data8/$JPY_USER"; \
+    command = 'STORED_DIR=$(<.syncdirectory.txt); \
                 LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 gdrive sync upload {} $LOAD_DIRECTORY; \
                 echo "Syncing directory now."'.format(SYNC_DIRECTORY)
@@ -95,6 +97,18 @@ def sync_gdrive_directory():
 
     return {
         'status': sync_status
+    }
+
+
+def set_sync_folder(param):
+    """Creates hidden file that contains id of Google Drive sync folder"""
+
+    command = 'echo {} > .syncdirectory.txt'.format(param[1:])
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+
+    return {
+        'status': 'success'
     }
 
 
@@ -120,8 +134,8 @@ def _user_is_authenticated():
 
 def _remote_sync_directory_exists():
     """Checks to make sure remote sync drive folder exists"""
-    command = 'STORED_DIR="data8/$JPY_USER"; \
-                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+    command = 'STORED_DIR=$(<.syncdirectory.txt); \
+                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 if [ -z "$LOAD_DIRECTORY" ]; \
                 then echo "Remote directory not found"; \
                 else echo "Found remote directory"; \
@@ -189,9 +203,11 @@ class SyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(sync_gdrive_directory()))
 
+
 class DriveHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(create_sync_directory()))
+
 
 class ResponseHandler(IPythonHandler):
     def get(self):
@@ -201,19 +217,21 @@ class ResponseHandler(IPythonHandler):
         success = authenticate_gdrive_user(self.get_body_argument("message").encode('utf-8'))
         self.finish(success)
 
+
 class LastSyncHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(check_gdrive_last_sync_time()))
+
 
 class LogoutHandler(IPythonHandler):
     def get(self):
         self.finish(json.dumps(logout_from_gdrive()))
 
 
-class PullHandler(IPythonHandler):
+class SetFolder(IPythonHandler):
     def post(self):
-        success = pull_from_gdrive(self.get_body_argument("message"))
-        self.finish(json.dumps(success))
+        success = set_sync_folder(self.get_body_argument("message").encode('utf-8'))
+        self.finish(success)
 
 
 def setup_handlers(web_app):
@@ -222,13 +240,13 @@ def setup_handlers(web_app):
     response_route_pattern = url_path_join(web_app.settings['base_url'], '/authenticateDrive')
     last_sync_route_pattern = url_path_join(web_app.settings['base_url'], '/lastSyncTime')
     logout_route_pattern = url_path_join(web_app.settings['base_url'], '/gdriveLogout')
-    pull_route_pattern = url_path_join(web_app.settings['base_url'], '/gdrivePull')
+    set_folder_pattern = url_path_join(web_app.settings['base_url'], '/setGDriveFolder')
 
     web_app.add_handlers('.*', [
         (dir_route_pattern, DriveHandler),
         (sync_route_pattern, SyncHandler),
         (response_route_pattern, ResponseHandler),
         (last_sync_route_pattern, LastSyncHandler),
-        (pull_route_pattern, PullHandler),
-        (logout_route_pattern, LogoutHandler)
+        (logout_route_pattern, LogoutHandler),
+        (set_folder_pattern, SetFolder)
     ])
