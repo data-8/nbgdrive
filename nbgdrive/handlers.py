@@ -177,11 +177,13 @@ def gdrive_puller(pull_folders, parent):
     else:
         results = []
         for f in folders:
-            results.append(gdrive_puller(pull_folders[1:], f))
+            pulled_dir = gdrive_puller(pull_folders[1:], f)
+            for d in pulled_dir:
+                results.append(d)
         if all([x == 'error' for x in results]):
             return ['error']
         else:
-            return [x for x in results if x != 'error' ][0]
+            return [x for x in results if x != 'error']
 
 
 class SyncHandler(IPythonHandler):
