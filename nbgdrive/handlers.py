@@ -136,7 +136,7 @@ def pull_from_gdrive(pull_id):
     """Pulls the directory associated with the path from user's gdrive"""
     try:
         gdrive_folders = pull_id.split('/')
-        dir_ids = gdrive_puller(gdrive_folders, "root")
+        dir_ids = _gdrive_puller(gdrive_folders, "root")
         if dir_ids[0] == 'error':
             return {
                 'status': 'error',
@@ -157,7 +157,7 @@ def pull_from_gdrive(pull_id):
         }
 
 
-def gdrive_puller(pull_folders, parent):
+def __gdrive_puller(pull_folders, parent):
     gdrive_name = pull_folders[0]
     command = "gdrive list -q 'trashed = false and \
             mimeType = \"application/vnd.google-apps.folder\" \
@@ -177,7 +177,7 @@ def gdrive_puller(pull_folders, parent):
     else:
         results = []
         for f in folders:
-            pulled_dir = gdrive_puller(pull_folders[1:], f)
+            pulled_dir = _gdrive_puller(pull_folders[1:], f)
             for d in pulled_dir:
                 results.append(d)
         if all([x == 'error' for x in results]):
