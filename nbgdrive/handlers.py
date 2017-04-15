@@ -247,6 +247,6 @@ def setup_handlers(web_app):
         (sync_route_pattern, SyncHandler),
         (response_route_pattern, ResponseHandler),
         (last_sync_route_pattern, LastSyncHandler),
-        (pull_route_pattern, PullHandler)
+        (pull_route_pattern, PullHandler),
         (logout_route_pattern, LogoutHandler)
     ])
