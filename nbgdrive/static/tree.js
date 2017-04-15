@@ -8,17 +8,6 @@ define([
     /*
      *  Updates the Jupyter notebook display to handle the initial Drive authentication.
      */
-    function randomTest() {
-         createManualSyncButton();
-         createManualPullButton();
-         createLogoutButton();
-         createManualSyncButton();
-         createManualPullButton();
-         createLogoutButton();
-         createManualSyncButton();
-         createManualPullButton();
-         createLogoutButton();
-    }
 
     function createDisplayDiv() {
         /* Remove the link elements. */
