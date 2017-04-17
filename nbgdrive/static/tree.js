@@ -34,62 +34,102 @@ define([
                                     },
                                     function(response) {
 
-                                    $("#nbgdrive-display").remove();
-                                    $("#nbgdrive-link").remove();
-                                    $("#nbgdrive-button").remove();
+                                        $("#nbgdrive-display").remove();
+                                        $("#nbgdrive-link").remove();
+                                        $("#nbgdrive-button").remove();
 
-                                    /* The key was valid and we have authenticated properly. */
-                                    if (response.includes("User")) {
+                                        /* The key was valid and we have authenticated properly. */
+                                        if (response.includes("User")) {
 
-                                        $('#notebook_toolbar').append(
-                                            $('<div>').attr('id', 'nbgdrive-display')
+                                            $('#notebook_toolbar').append(
+                                                $('<div>').attr('id', 'nbgdrive-display')
                                                     .addClass('btn-group')
                                                     .addClass('pull-right')
-                                            .append(
-                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                                                             .text('User authenticated!')
-                                            )
-                                        );
+                                                .append(
+                                                    $('<input>').attr('id', 'nbgdrive-folder-path')
+                                                        .attr('type', 'text')
+                                                ).append(
+                                                    $('<button>').attr('id', 'nbgdrive-button')
+                                                        .text('Submit Folder Name')
+                                                        .click(function() {
 
-                                        /* Alert user that they've successfully authenticated. */
-                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
+                                                            var folderPath = $("#nbgdrive-folder-path").val();
 
-                                        /* Add a button to allow to manually sync their Drive files. */
-                                        createManualSyncButton();
+                                                            console.log('okkk')
+                                                            console.log(folderPath)
+                                                            var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
 
-                                        /* Add a button to allow to logout from gdrive. */
-                                        createLogoutButton();
+                                                            $('#notebook_toolbar').append(
+                                                                $('<div>').attr('id', 'nbgdrive-display')
+                                                                        .addClass('btn-group')
+                                                                        .addClass('pull-right')
+                                                                .append(
+                                                                    $('<strong>').attr('id', 'nbgdrive-authenticated-result')
+                                                                                 .text('User authenticated!')
+                                                                )
+                                                            );
 
-                                        /* GET Request to alert Server to create a sync directory. */
-                                        var path = 'default-name'
-                                        var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+                                                            /* Alert user that they've successfully authenticated. */
+                                                            $("#nbgdrive-authenticated-result").fadeOut(3000);
 
-                                        $.post(utils.get_body_data('baseUrl') + 'setGDriveFolder',
-                                            {
-                                            message: path,
-                                            _xsrf: r ? r[1] : undefined
-                                            },
-                                            function(response) {});
 
-                                        $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
-                                            var display = String(data['status']);
-                                        });
+                                                            /* POST Request to alert Server to set the sync directory name. */
+                                                            var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
 
-                                    } else {
-                                        $('#notebook_toolbar').append(
-                                            $('<div>').attr('id', 'nbgdrive-display')
-                                                    .addClass('btn-group')
-                                                    .addClass('pull-right')
-                                            .append(
-                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                                                             .text('Your key was incorrect. Please try again!')
-                                            )
-                                        );
+                                                            $.post(utils.get_body_data('baseUrl') + 'setGDriveFolder',
+                                                                {
+                                                                    message: folderPath,
+                                                                    _xsrf: r ? r[1] : undefined
+                                                                },
+                                                            function(response) {
 
-                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
-                                        setTimeout(displayDriveVerificationLink, 5000);
+                                                                $("#nbgdrive-display").remove();
+                                                                $("#nbgdrive-folder-path").remove();
+                                                                $("#nbgdrive-link").remove();
+                                                                $("#nbgdrive-button").remove();
+
+                                                            });
+
+                                                            $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
+                                                                var display = String(data['status']);
+
+                                                                $('#notebook_toolbar').append(
+                                                                $('<div>').attr('id', 'nbgdrive-display')
+                                                                            .addClass('btn-group')
+                                                                            .addClass('pull-right')
+                                                                    .append(
+                                                                        $('<strong>').attr('id', 'nbgdrive-sync-status')
+                                                                                     .text(display)
+                                                                    )
+                                                                );
+                                                            })
+
+                                                            $("#nbgdrive-authenticated-result").fadeOut(10000);
+
+                                                            createButtonGroup();
+                                                            createManualSyncButton();
+                                                            createManualPullButton();
+                                                            createLogoutButton();
+                                                        })
+                                                )
+                                            );
+
+                                        } else {
+                                            $('#notebook_toolbar').append(
+                                                $('<div>').attr('id', 'nbgdrive-display')
+                                                        .addClass('btn-group')
+                                                        .addClass('pull-right')
+                                                .append(
+                                                    $('<strong>').attr('id', 'nbgdrive-authenticated-result')
+                                                                 .text('Your key was incorrect. Please try again!')
+                                                )
+                                            );
+
+                                            $("#nbgdrive-authenticated-result").fadeOut(4000);
+                                            setTimeout(displayDriveVerificationLink, 5000);
+                                        }
                                     }
-                                });
+                                );
                              })
             )
         );

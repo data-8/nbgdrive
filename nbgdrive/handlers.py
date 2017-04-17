@@ -22,7 +22,7 @@ def create_sync_directory():
                     .format(SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
-        create_dir_status = 'Successfully created Sync Directory' if not err else create_dir_status
+        create_dir_status = 'Successfully created Sync Directory. Syncing now. This might take a couple minutes.' if not err else create_dir_status
 
     return {
         'status': create_dir_status
@@ -88,7 +88,7 @@ def sync_gdrive_directory():
         create_sync_directory()
 
     command = 'STORED_DIR=$(<.syncdirectory.txt); \
-                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 gdrive sync upload {} $LOAD_DIRECTORY; \
                 echo "Syncing directory now."'.format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
@@ -102,8 +102,7 @@ def sync_gdrive_directory():
 
 def set_sync_folder(param):
     """Creates hidden file that contains id of Google Drive sync folder"""
-
-    command = 'echo {} > .syncdirectory.txt'.format(param[1:])
+    command = 'echo {} > .syncdirectory.txt'.format(str(param, 'utf-8'))
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
 
