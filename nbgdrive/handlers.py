@@ -102,6 +102,7 @@ def sync_gdrive_directory():
 
 def set_sync_folder(param):
     """Creates hidden file that contains id of Google Drive sync folder"""
+    param = "_".join(param.split())  # Substitutes whitespace with underscores
     command = 'echo {} > .syncdirectory.txt'.format(str(param, 'utf-8'))
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
