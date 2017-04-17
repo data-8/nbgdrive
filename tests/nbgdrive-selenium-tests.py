@@ -21,6 +21,8 @@ class JupyterGdriveTesting(unittest.TestCase):
         self.password = os.environ['PASSWORD']
 
     def test_login_successfully(self):
+        """ Tests to ensure that a user can retrieve the Google Drive authentication code
+        and connect their Jupyter Notebook to their Google Drive """
         driver = self.driver
         self.loginToJupyterNotebook(driver)
 
