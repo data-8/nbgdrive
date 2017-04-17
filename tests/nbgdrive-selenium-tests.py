@@ -1,15 +1,16 @@
+#!/usr/bin/python3
+
+""" Selenium Tests for nbgdrive extension for Jupyter Notebooks"""
 import unittest
 import time
 import os
+import constants
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
-
-DEFAULT_WAIT_TIME = 10
-DEFAULT_LONG_WAIT_TIME = 120
 
 class JupyterGdriveTesting(unittest.TestCase):
 
@@ -21,34 +22,30 @@ class JupyterGdriveTesting(unittest.TestCase):
 
     def test_login_successfully(self):
         driver = self.driver
-        driver.get("http://datahub-dev.berkeley.edu")
-        self.loginFromGoogleScreen(driver)
+        self.loginToJupyterNotebook(driver)
 
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until(EC.title_contains('Jupyter'))
-
-        # At Jupyter Hub
-        self.assertIn("Jupyter", driver.title)
-
-        # Stop and start server
+        # Start Server
         driver.find_element_by_xpath("//a[@id='start']").click()
-        WebDriverWait(driver, 120).until( \
+        WebDriverWait(driver, constants.START_SERVER_WAIT_PERIOD).until( \
             EC.presence_of_element_located((By.ID, "nbgdrive-link")))
 
-        # Attempt to verify user, make sure button is on page
+        # Verify the user
         self.assertIn("nbgdrive-link", driver.page_source)
         driver.find_element_by_xpath("//button[@id='nbgdrive-link']").click()
-
-        # Get the gdrive auth code
         time.sleep(1)
+
+        # Retrieve Google Drive Authentication Code
         self.assertEqual(2, len(driver.window_handles))
         tree_window, auth_window = driver.window_handles
         driver.switch_to.window(auth_window)
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until(EC.title_contains('Request'))
-        self.assertIn("Request for Permission", driver.title)
+        WebDriverWait(driver, constants.DEFAULT_WAIT_PERIOD).until( \
+            EC.title_contains(constants.GDRIVE_PAGE_TITLE))
+        self.assertIn(constants.GDRIVE_PAGE_TITLE, driver.title)
 
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until(EC.element_to_be_clickable((By.ID, "submit_approve_access")))
+        WebDriverWait(driver, constants.DEFAULT_WAIT_PERIOD).until( \
+            EC.element_to_be_clickable((By.ID, "submit_approve_access")))
         driver.find_element_by_xpath("//button[@id='submit_approve_access']").click()
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until( \
+        WebDriverWait(driver, constants.DEFAULT_WAIT_PERIOD).until( \
             EC.presence_of_element_located((By.ID, "code")))
         auth_code = driver.find_element_by_xpath("//input[@id='code']").get_attribute("value")
 
@@ -58,46 +55,59 @@ class JupyterGdriveTesting(unittest.TestCase):
         auth_input = driver.find_element_by_xpath("//input[@id='nbgdrive-authentication']")
         auth_input.send_keys(auth_code)
         driver.find_element_by_xpath("//button[@id='nbgdrive-button']").click()
+        time.sleep(1)
 
         # Ensure that newly added buttons are in page source
-        time.sleep(1)
         self.assertIn("fa-cloud fa", driver.page_source)
         self.assertIn("fa-cloud-download fa", driver.page_source)
         self.assertIn("fa-sign-out fa", driver.page_source)
 
     def test_logout_successfully(self):
+        """ Tests to ensure that once a user is authenticated into Google Drive CLI,
+        he or she can also log their account out and revoke rights """
         driver = self.driver
-        driver.get("http://datahub-dev.berkeley.edu")
-        self.loginFromGoogleScreen(driver)
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until(EC.title_contains('Jupyter'))
+        self.loginToJupyterNotebook(driver)
 
-        # At Jupyter Hub
-        self.assertIn("Jupyter", driver.title)
-
-        # Stop and start server
+        # Start Server
         driver.find_element_by_xpath("//a[@id='start']").click()
-        WebDriverWait(driver, DEFAULT_LONG_WAIT_TIME).until(EC.title_contains('Home'))
-        time.sleep(2)
-        WebDriverWait(driver, DEFAULT_LONG_WAIT_TIME).until( \
+        WebDriverWait(driver, constants.START_SERVER_WAIT_PERIOD).until( \
+            EC.title_contains(constants.NOTEBOOK_PAGE_TITLE))
+        time.sleep(1)
+
+        # Wait until Sync completes
+        WebDriverWait(driver, constants.START_SERVER_WAIT_PERIOD).until( \
             EC.invisibility_of_element_located((By.ID, "nbgdrive-authenticated-result")))
+
         driver.find_element_by_xpath("//button[@class='btn btn-xs btn-default']").click()
-        time.sleep(2)
+
+        # Button to verify GDrive shows up again
+        WebDriverWait(driver, constants.START_SERVER_WAIT_PERIOD).until( \
+            EC.presence_of_element_located((By.ID, "nbgdrive-link")))
         self.assertIn("nbgdrive-link", driver.page_source)
 
-    def loginFromGoogleScreen(self, driver):
-        google_sign_in = driver.find_element_by_xpath("//input[@id='Email']")
-        google_sign_in.send_keys(self.bmail)
-        driver.find_element_by_xpath("//input[@id='next']").click()
-        # At Berkeley Sign In Page
-        WebDriverWait(driver, DEFAULT_WAIT_TIME).until(EC.title_contains('CalNet'))
-        self.assertIn("CalNet", driver.title)
+    def loginToJupyterNotebook(self, driver):
+        """ From the initial Google login landing page, navigates and signs in 
+        using valid Berkeley credentials discerned from environment variables """
+        driver.get(constants.DATAHUB_DEV_URL)
 
-        # Sign In (CalNet)
-        calnet_sign_in = driver.find_element_by_xpath("//input[@id='username']")
-        calnet_sign_in.send_keys(self.user)
-        calnet_password = driver.find_element_by_xpath("//input[@id='password']")
-        calnet_password.send_keys(self.password)
+        # Verify Google
+        driver.find_element_by_xpath("//input[@id='Email']").send_keys(self.bmail)
+        driver.find_element_by_xpath("//input[@id='next']").click()
+        
+        # Verify CalNet
+        WebDriverWait(driver, constants.DEFAULT_WAIT_PERIOD).until( \
+            EC.title_contains(constants.CALNET_PAGE_TITLE))
+        self.assertIn(constants.CALNET_PAGE_TITLE, driver.title)
+
+        # Sign In via CalNet
+        driver.find_element_by_xpath("//input[@id='username']").send_keys(self.user)
+        driver.find_element_by_xpath("//input[@id='password']").send_keys(self.password)
         driver.find_element_by_xpath("//input[@class='button']").click()
+
+        # Verify Login took us to correct location
+        WebDriverWait(driver, constants.DEFAULT_WAIT_PERIOD).until( \
+            EC.title_contains(constants.SERVER_PAGE_TITLE))
+        self.assertIn(constants.SERVER_PAGE_TITLE, driver.title)
 
     def tearDown(self):
         self.driver.quit()
