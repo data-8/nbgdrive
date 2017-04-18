@@ -311,7 +311,6 @@ define([
 
     var load_ipython_extension = function () {
         displayDriveVerificationLink();
-        // randomTest();
     };
 
     return {
