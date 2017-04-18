@@ -31,12 +31,18 @@ Once you are successfully logged in, you will be able to Sync manually by pressi
 
 ![nbgdrive Screenshot 3](http://i.imgur.com/otdeMKD.png)
 
-## Synching
+## Syncing
 
-Synching will create a sync folder in the main directory of your Google Drive, and upstream sync to it the contents of the Jupyter Notebook directory `/home/jovyan`.
+Synching will create a sync folder in the main directory of your Google Drive, and upstream sync to it the contents of the Jupyter Notebook directory `/home/jovyan`. As this tool was created with UC Berkeley's Data 8 class in mind, the default folder structure will be named `data8/$JPY_USER`.
 
 Tampering with the contents or location of the sync folder will cause nbgdrive to break.
 To fix any such issue, it's recommended to log out (through the logout button next to the sync button), and reauthenticate Google Drive.
+
+## Installation and Dependencies
+
+There are a few dependencies required for this repository to function currectly. Underlying `nbgdrive` is a Google Drive [CLI](https://github.com/prasmussen/gdrive). You must install and give this tool proper access before using `nbgdrive`. Please ensure this tool exists on your `$PATH`, by putting in the default `/usr/bin` or by modifying your `bash_profile`. 
+
+Additionally, there are Selenium tests located in the `tests` subdirectory. To run these tests, first `pip install selenium`. Depending on what browsers you'd like to test for, you will also need to download some [drivers](http://selenium-python.readthedocs.io/installation.html#drivers) and place them in your `/usr/bin` directory.
 
 ## Cal Blueprint
 
