@@ -2,7 +2,7 @@
 
 """ All constants for Jupyter Notebook testing """
 DEFAULT_WAIT_PERIOD = 10
-START_SERVER_WAIT_PERIOD = 60
+START_SERVER_WAIT_PERIOD = 120
 DATAHUB_DEV_URL = "http://datahub-dev.berkeley.edu"
 
 """ Keywords that appear in different redirect page titles """
