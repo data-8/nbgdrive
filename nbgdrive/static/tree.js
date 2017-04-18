@@ -183,7 +183,7 @@ define([
 
                       console.log(response);
 
-                      if (response.includes("User")) {
+                      if (response.includes("erification")) {
                           createManualSyncButton();
                           createManualPullButton();
                           createLogoutButton();
