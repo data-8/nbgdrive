@@ -188,21 +188,59 @@ define([
                       $("#nbgdrive-authentication").remove();
                       $("#nbgdrive-button").remove();
 
-                      console.log(response);
+                      console.log("Response is: " + response);
 
-                      if (response.includes("Free")) {
-                          createManualSyncButton();
-                          createLogoutButton();
-                          createManualPullButton();
+                      if (!response.includes("Failed")) {
+                          $('#nbgdrive-button-group').prepend(
+                              $('<div>').addClass('btn-group').attr('id', 'nbgdrive-button').prepend(
+                                  '<button class="btn btn-xs btn-default" title="Submit Google Drive Folder Path"><i class="fa fa-sign-in"></i></button>'
+                              ).click(function () {
+                                  var folderPath = $("#nbgdrive-folder-path").val();
+                                  var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+
+                                  $.post(utils.get_body_data('baseUrl') + 'setGDriveFolder',
+                                      {
+                                          message: folderPath,
+                                          _xsrf: r ? r[1] : undefined
+                                      },
+                                  function(response) {
+                                      $("#nbgdrive-folder-path").remove();
+                                      $("#nbgdrive-button").remove();
+                                      createManualSyncButton();
+                                      createLogoutButton();
+                                      createManualPullButton();
+
+                                      $('#nbgdrive-button-group').prepend(
+                                          $('<div>').addClass('btn-group').prepend(
+                                              $('<strong>').attr('id', 'nbgdrive-syncdir-status').text("Creating Drive Directory...").css('margin-right', '15px')
+                                          )
+                                      );
+                                  });
+
+                                  $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
+
+                                      var display = String(data['status']);
+                                      $("#nbgdrive-syncdir-status").text(display);
+                                      $("#nbgdrive-syncdir-status").fadeOut(4000);
+                                  });
+                              })
+                          );
 
                           $('#nbgdrive-button-group').prepend(
                               $('<div>').addClass('btn-group').prepend(
-                                   $('<strong>').attr('id', 'nbgdrive-authenticated-result').text('User Authenticated!').css('margin-right', '15px')
+                                  $('<input>').attr('id', 'nbgdrive-folder-path').attr('type', 'text')
+                                      .attr('placeholder', 'Drive Folder Name').css('margin-right', '5px')
+                              )
+                          );
+
+                          $('#nbgdrive-button-group').prepend(
+                              $('<div>').addClass('btn-group').prepend(
+                                  $('<strong>').attr('id', 'nbgdrive-authenticated-result').text('User Authenticated!').css('margin-right', '15px')
                               )
                           );
 
                           $("#nbgdrive-authenticated-result").fadeOut(4000);
-                          $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {});
+
                       } else {
                           $('#nbgdrive-button-group').prepend(
                               $('<div>').addClass('btn-group').prepend(
@@ -220,7 +258,8 @@ define([
 
       $('#nbgdrive-button-group').prepend(
           $('<div>').addClass('btn-group').prepend(
-              $('<input>').attr('id', 'nbgdrive-authentication').attr('type', 'text').css('margin-right', '5px')
+              $('<input>').attr('id', 'nbgdrive-authentication').attr('type', 'text')
+                  .attr('placeholder', 'Authentication Key').css('margin-right', '5px')
           )
       );
     }
