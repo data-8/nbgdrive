@@ -106,9 +106,11 @@ define([
     }
 
     var gDrivePull = function() {
+        $('#nbgdrive-pull-button').remove();
+
         $('#nbgdrive-button-group').prepend(
-            $('<div>').addClass('btn-group').attr('id', 'nbgdrive-pull-button').prepend(
-              '<button class="btn btn-xs btn-default" title="Google Drive Pull"><i class="fa fa-sign-in"></i></button>'
+            $('<div>').addClass('btn-group').attr('id', 'nbgdrive-pull-submission-button').prepend(
+              '<button class="btn btn-xs btn-default" title="Submit Google Drive Pull Path"><i class="fa fa-sign-in"></i></button>'
             ).click(function () {
                   var gdrive_pull_path = $("#nbgdrive-pull-id").val();
                   var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
@@ -118,6 +120,11 @@ define([
                           _xsrf: r ? r[1] : undefined
                       },
                       function(response) {
+                          $("#nbgdrive-pull-id").remove()
+                          $("#nbgdrive-pull-submission-button").remove()
+
+                          createManualPullButton();
+
                           console.log(JSON.stringify(response));
                           if (!response.includes('error')) {
                               $('#nbgdrive-button-group').prepend(
@@ -151,7 +158,7 @@ define([
        console.log("Created gdrive pull button");
        $('#nbgdrive-button-group').prepend(
             $('<div>').addClass('btn-group').prepend(
-                 '<button class="btn btn-xs btn-default" title="Pull from Google Drive"><i class="fa-cloud-download fa"></i></button>'
+                 '<button class="btn btn-xs btn-default" title="Pull from Google Drive" id="nbgdrive-pull-button"><i class="fa-cloud-download fa"></i></button>'
             ).click(
                  gDrivePull
             )
@@ -183,10 +190,10 @@ define([
 
                       console.log(response);
 
-                      if (response.includes("erification")) {
+                      if (response.includes("Free")) {
                           createManualSyncButton();
-                          createManualPullButton();
                           createLogoutButton();
+                          createManualPullButton();
 
                           $('#nbgdrive-button-group').prepend(
                               $('<div>').addClass('btn-group').prepend(
@@ -239,8 +246,8 @@ define([
                 );
             } else {
                 createManualSyncButton();
-                createManualPullButton();
                 createLogoutButton();
+                createManualPullButton();
                 checkIfReadyToSync();
             }
         });
