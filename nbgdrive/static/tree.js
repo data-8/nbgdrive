@@ -6,115 +6,21 @@ define([
     $, utils, Jupyter
 ) {
     /*
-     *  Updates the Jupyter notebook display to handle the initial Drive authentication.
-     */
-
-    function createDisplayDiv() {
-        /* Remove the link elements. */
-        $("#nbgdrive-display").remove()
-        $("#nbgdrive-link").remove()
-
-        $('#notebook_toolbar').append(
-            $('<div>').attr('id', 'nbgdrive-display')
-                      .addClass('btn-group')
-                      .addClass('pull-right')
-            .append(
-                $('<input>').attr('id', 'nbgdrive-authentication')
-                           .attr('type', 'text')
-            ).append(
-                $('<button>').attr('id', 'nbgdrive-button')
-                             .text('Submit Drive Key')
-                             .click(function() {
-                                var gdrive_auth_id = $("#nbgdrive-authentication").val();
-                                var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
-                                $.post(utils.get_body_data('baseUrl') + 'authenticateDrive',
-                                    {
-                                        message: gdrive_auth_id,
-                                        _xsrf: r ? r[1] : undefined
-                                    },
-                                    function(response) {
-
-                                    $("#nbgdrive-display").remove();
-                                    $("#nbgdrive-link").remove();
-                                    $("#nbgdrive-button").remove();
-
-                                    /* The key was valid and we have authenticated properly. */
-                                    if (response.includes("User")) {
-
-                                        $('#notebook_toolbar').append(
-                                            $('<div>').attr('id', 'nbgdrive-display')
-                                                    .addClass('btn-group')
-                                                    .addClass('pull-right')
-                                            .append(
-                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                                                             .text('User authenticated!')
-                                            )
-                                        );
-
-                                        /* Alert user that they've successfully authenticated. */
-                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
-
-                                        createButtonGroup();
-
-                                        /* Add a button to allow to manually sync their Drive files. */
-                                        createManualSyncButton();
-
-                                        /* Add a button to allow pulling from gdrive. */
-                                        createManualPullButton();
-
-                                        /* Add a button to allow to logout from gdrive. */
-                                        createLogoutButton();
-
-                                        /* GET Request to alert Server to create a sync directory. */
-                                        $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {
-                                            var display = String(data['status']);
-                                        });
-
-                                    } else {
-                                        $('#notebook_toolbar').append(
-                                            $('<div>').attr('id', 'nbgdrive-display')
-                                                    .addClass('btn-group')
-                                                    .addClass('pull-right')
-                                            .append(
-                                                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                                                             .text('Your key was incorrect. Please try again!')
-                                            )
-                                        );
-
-                                        $("#nbgdrive-authenticated-result").fadeOut(4000);
-                                        setTimeout(displayDriveVerificationLink, 5000);
-                                    }
-                                });
-                             })
-            )
-        );
-
-        $('nbgdrive-authentication').after("      ");
-    }
-
-    /*
      *  Makes a GET request to trigger the manual sync of the current directory
      *  to a pre-established Google Drive Sync Directory.
      */
     var syncDriveFiles = function () {
-        $("#nbgdrive-display").remove();
-
-        // Let user know that their sync has started
-        $('#notebook_toolbar').append(
-            $('<div>').attr('id', 'nbgdrive-display')
-                    .addClass('btn-group')
-                    .addClass('pull-right')
-            .append(
-                $('<strong>').attr('id', 'nbgdrive-authenticated-result')
-                             .text('Syncing to Google Drive...')
-            )
+        $('#nbgdrive-button-group').prepend(
+          $('<div>').addClass('btn-group').prepend(
+              $('<strong>').attr('id', 'nbgdrive-authenticated-result')
+                .css('margin-right', '15px').text('Syncing to Drive...')
+          )
         );
 
         $.getJSON(utils.get_body_data('baseUrl') + 'syncDrive', function(data) {
             var display = String(data['status']);
             console.log ("Sync status: " + display);
 
-            // Alert user if their sync was successful or not when result received
             if (display.includes("Successfully")) {
                 display = "Sync successful!";
             } else {
@@ -165,7 +71,7 @@ define([
 
         $('#nbgdrive-button-group').prepend(
              $('<div>').addClass('btn-group').prepend(
-                  '<button class="btn btn-xs btn-default" title="Sync with GDrive"><i class="fa-cloud fa"></i></button>'
+                  '<button class="btn btn-xs btn-default" title="Sync to Google Drive"><i class="fa-cloud fa"></i></button>'
              ).click(
                   syncDriveFiles
              )
@@ -173,11 +79,9 @@ define([
     }
 
    var gdriveLogout = function () {
-
        $.getJSON(utils.get_body_data('baseUrl') + 'gdriveLogout', function(data) {
            var display = String(data['status']);
 
-           // Alert user if their sync was successful or not when result received
            if (display.includes("success")) {
                display = "Logout successful!";
            } else {
@@ -190,130 +94,166 @@ define([
        });
    }
 
-   var createLogoutButton = function () {
+    var createLogoutButton = function () {
        console.log("Created logout button");
-
        $('#nbgdrive-button-group').prepend(
             $('<div>').addClass('btn-group').prepend(
-                 '<button class="btn btn-xs btn-default" title="Logout from GDrive"><i class="fa-sign-out fa"></i></button>'
+                 '<button class="btn btn-xs btn-default" title="Logout from Google Drive"><i class="fa-sign-out fa"></i></button>'
             ).click(
                  gdriveLogout
             )
        );
-   }
+    }
 
-   var gDrivePull = function() {
-        $("#nbgdrive-display").remove()
+    var gDrivePull = function() {
+        $('#nbgdrive-button-group').prepend(
+            $('<div>').addClass('btn-group').attr('id', 'nbgdrive-pull-button').prepend(
+              '<button class="btn btn-xs btn-default" title="Google Drive Pull"><i class="fa fa-sign-in"></i></button>'
+            ).click(function () {
+                  var gdrive_pull_path = $("#nbgdrive-pull-id").val();
+                  var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+                  $.post(utils.get_body_data('baseUrl') + 'gdrivePull',
+                      {
+                          message: gdrive_pull_path,
+                          _xsrf: r ? r[1] : undefined
+                      },
+                      function(response) {
+                          console.log(JSON.stringify(response));
+                          if (!response.includes('error')) {
+                              $('#nbgdrive-button-group').prepend(
+                                  $('<div>').addClass('btn-group').prepend(
+                                     $('<strong>').attr('id', 'nbgdrive-pull-result')
+                                        .text('Pulled from Google Drive Successfully!').css('margin-right', '15px')
+                                  )
+                              );
+                          } else {
+                              $('#nbgdrive-button-group').prepend(
+                                  $('<div>').addClass('btn-group').prepend(
+                                     $('<strong>').attr('id', 'nbgdrive-pull-result')
+                                        .text('Your input path was incorrect - please try again!').css('margin-right', '15px')
+                                  )
+                              );
+                          }
 
-        $('#notebook_toolbar').append(
-            $('<div>').attr('id', 'nbgdrive-display')
-                      .addClass('btn-group')
-                      .addClass('pull-right')
-            .append(
-                $('<input>').attr('id', 'nbgdrive-pull-id')
-                           .attr('type', 'text')
-            ).append(
-                $('<button>').attr('id', 'nbgdrive-pull-button')
-                             .text('Download from GDrive Path')
-                             .click(function() {
-                                  var gdrive_pull_path = $("#nbgdrive-pull-id").val();
-                                  var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
-                                  $.post(utils.get_body_data('baseUrl') + 'gdrivePull',
-                                      {
-                                          message: gdrive_pull_path,
-                                          _xsrf: r ? r[1] : undefined
-                                      },
-                                      function(response) {
-                                          console.log(JSON.stringify(response));
-                                          if (!response.includes('error')) {
-                                               $('#notebook_toolbar').append(
-                                                   $('<div>').attr('id', 'nbgdrive-display')
-                                                           .addClass('btn-group')
-                                                           .addClass('pull-right')
-                                                   .append(
-                                                      $('<strong>').attr('id', 'nbgdrive-pull-result')
-                                                                   .text('Pulled from GDrive successfully!')
-                                                   )
-                                               );
+                          $("#nbgdrive-pull-result").fadeOut(4000);
+                      });
+            })
+        );
+    
+        $('#nbgdrive-button-group').prepend(
+          $('<div>').addClass('btn-group').prepend(
+              $('<input>').attr('id', 'nbgdrive-pull-id').attr('type', 'text').css('margin-right', '5px')
+          )
+        );
+    }
 
-                                               /* Alert user that they've successfully authenticated. */
-                                               $("#nbgdrive-pull-result").fadeOut(4000);
-                                          } else {
-                                              $('#notebook_toolbar').append(
-                                                  $('<div>').attr('id', 'nbgdrive-display')
-                                                          .addClass('btn-group')
-                                                          .addClass('pull-right')
-                                                  .append(
-                                                      $('<strong>').attr('id', 'nbgdrive-pull-result')
-                                                                   .text('Your inputed path was incorrect. Please try again!')
-                                                  )
-                                              );
-
-                                              $("#nbgdrive-pull-result").fadeOut(4000);
-                                          }
-                                      });
-                             })
-                        )
-            );
-   }
-
-   var createManualPullButton = function () {
+    var createManualPullButton = function () {
        console.log("Created gdrive pull button");
-
        $('#nbgdrive-button-group').prepend(
             $('<div>').addClass('btn-group').prepend(
-                 '<button class="btn btn-xs btn-default" title="Pull from GDrive"><i class="fa-cloud-download fa"></i></button>'
+                 '<button class="btn btn-xs btn-default" title="Pull from Google Drive"><i class="fa-cloud-download fa"></i></button>'
             ).click(
                  gDrivePull
             )
        );
-   }
+    }
 
-   var createButtonGroup = function() {
+    var createButtonGroup = function() {
         console.log("Created button group");
-
         $('#notebook_toolbar .pull-right').prepend($('<span>')).attr('id', 'nbgdrive-button-group');
-   }
+    }
+
+    var createSubmissionDisplay = function() {
+      $('#nbgdrive-link').remove();
+
+      $('#nbgdrive-button-group').prepend(
+          $('<div>').addClass('btn-group').attr('id', 'nbgdrive-button').prepend(
+              '<button class="btn btn-xs btn-default" title="Submit Google Drive Authentication Code"><i class="fa fa-sign-in"></i></button>'
+          ).click(function() {
+              var gdrive_auth_id = $("#nbgdrive-authentication").val();
+              var r = document.cookie.match("\\b_xsrf=([^;]*)\\b");
+              $.post(utils.get_body_data('baseUrl') + 'authenticateDrive',
+                  {
+                    message: gdrive_auth_id,
+                    _xsrf: r ? r[1] : undefined
+                  },
+                  function(response) {
+                      $("#nbgdrive-authentication").remove();
+                      $("#nbgdrive-button").remove();
+
+                      console.log(response);
+
+                      if (response.includes("User")) {
+                          createManualSyncButton();
+                          createManualPullButton();
+                          createLogoutButton();
+
+                          $('#nbgdrive-button-group').prepend(
+                              $('<div>').addClass('btn-group').prepend(
+                                   $('<strong>').attr('id', 'nbgdrive-authenticated-result').text('User Authenticated!').css('margin-right', '15px')
+                              )
+                          );
+
+                          $("#nbgdrive-authenticated-result").fadeOut(4000);
+                          $.getJSON(utils.get_body_data('baseUrl') + 'createDrive', function(data) {});
+                      } else {
+                          $('#nbgdrive-button-group').prepend(
+                              $('<div>').addClass('btn-group').prepend(
+                                   $('<strong>').attr('id', 'nbgdrive-authenticated-result').text('Authentication Failed!').css('margin-right', '15px')
+                              )
+                          );
+
+                          $("#nbgdrive-authenticated-result").fadeOut(4000);
+                          setTimeout(displayDriveVerificationLink, 5000);
+                      }
+                  }
+              );
+          })
+      );
+
+      $('#nbgdrive-button-group').prepend(
+          $('<div>').addClass('btn-group').prepend(
+              $('<input>').attr('id', 'nbgdrive-authentication').attr('type', 'text').css('margin-right', '5px')
+          )
+      );
+    }
 
     /*
      *  Retrieves Drive verification link and displays it to the user.
      */
     var displayDriveVerificationLink = function () {
-        $("#nbgdrive-display").remove();
-        $("#nggdrive-authenticated-result").remove();
+        $("#nbgdrive-authenticated-result").remove();
+        createButtonGroup();
 
         $.getJSON(utils.get_body_data('baseUrl') + 'authenticateDrive', function(data) {
             var display = String(data['authentication'])
 
             if (display !== "authenticated") {
-                $('#notebook_toolbar').append(
-                        $('<div>').attr('id', 'nbgdrive-display')
-                                  .addClass('btn-group')
-                                  .addClass('pull-right')
-                        .append(
-                            $('<button>').attr('id', 'nbgdrive-link')
-                                         .text('Verify Drive')
-                                         .click(function() {
-                                            openAuthenticationInNewTab(display);
-                                            createDisplayDiv()
-                                         })
-                        )
-                    );
+                $('#nbgdrive-button-group').prepend(
+                    $('<div>').addClass('btn-group').attr('id', 'nbgdrive-link').prepend(
+                         '<button class="btn btn-xs btn-default" title="Authenticate Google Drive"><i class="fa-cloud fa"></i></button>'
+                    ).click(function() {
+                      openAuthenticationInNewTab(display);
+                      createSubmissionDisplay();
+                    })
+                );
             } else {
-                checkIfReadyToSync();
-                createButtonGroup();
                 createManualSyncButton();
                 createManualPullButton();
                 createLogoutButton();
+                checkIfReadyToSync();
             }
         });
     }
 
     var load_ipython_extension = function () {
+        $(".col-sm-8.no-padding").attr('class', 'col-sm-4 no-padding');
+        $(".col-sm-4.no-padding.tree-buttons").attr('class', 'col-sm-8 no-padding tree-buttons');
         displayDriveVerificationLink();
     };
 
     return {
         load_ipython_extension: load_ipython_extension,
     };
-});
+
+  });
