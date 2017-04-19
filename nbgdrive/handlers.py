@@ -3,6 +3,7 @@ from subprocess import Popen, PIPE
 from notebook.utils import url_path_join
 from notebook.base.handlers import IPythonHandler
 
+DRIVE_MAX_SIZE = 1000
 SYNC_DIRECTORY = "/home/jovyan"
 DEFAULT_SYNC_NAME = "Jupyter/Nbgdrive"
 
@@ -76,8 +77,8 @@ def check_gdrive_last_sync_time():
                 STORED_DIR=$(<.syncdirectory.txt); \
                 else STORED_DIR={}; \
                 fi; \
-                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'.format(DEFAULT_SYNC_NAME)
+                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
 
@@ -102,9 +103,9 @@ def sync_gdrive_directory():
                 STORED_DIR=$(<.syncdirectory.txt); \
                 else STORED_DIR={}; \
                 fi; \
-                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 gdrive sync upload {} $LOAD_DIRECTORY; \
-                echo "Syncing directory now."'.format(DEFAULT_SYNC_NAME, SYNC_DIRECTORY)
+                echo "Syncing directory now."'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE, SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     sync_status = 'Successfully synced data to Google Drive' if not err else sync_status
@@ -133,11 +134,11 @@ def _remote_sync_directory_exists():
                 STORED_DIR=$(<.syncdirectory.txt); \
                 else STORED_DIR={}; \
                 fi; \
-                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 if [ -z "$LOAD_DIRECTORY" ]; \
                     then echo "Remote directory not found"; \
                 else echo "Found remote directory"; \
-                fi'.format(DEFAULT_SYNC_NAME)
+                fi'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     return True if "Found remote directory" in output.decode("utf-8") else False
@@ -190,10 +191,10 @@ def pull_from_gdrive(pull_id):
 
 def _gdrive_puller(pull_folders, parent):
     gdrive_name = pull_folders[0]
-    command = "gdrive list -q 'trashed = false and \
+    command = "gdrive list -m {} -q 'trashed = false and \
             mimeType = \"application/vnd.google-apps.folder\" \
             and name = \"" + gdrive_name + "\" and \
-            \"" + parent + "\" in parents' | sed -n '2,$p' | awk '{print $1}'"
+            \"" + parent + "\" in parents' | sed -n '2,$p' | awk '{print $1}'".format(DRIVE_MAX_SIZE)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     folders = str(output, 'utf-8').splitlines()
