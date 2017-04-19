@@ -190,7 +190,7 @@ define([
 
                       console.log("Response is: " + response);
 
-                      if (!response.includes("Failed")) {
+                      if (response.includes("Free:") && !response.includes("Failed")) {
                           $('#nbgdrive-button-group').prepend(
                               $('<div>').addClass('btn-group').attr('id', 'nbgdrive-button').prepend(
                                   '<button class="btn btn-xs btn-default" title="Submit Google Drive Folder Path"><i class="fa fa-sign-in"></i></button>'

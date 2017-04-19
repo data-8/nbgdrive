@@ -4,7 +4,7 @@ from notebook.utils import url_path_join
 from notebook.base.handlers import IPythonHandler
 
 SYNC_DIRECTORY = "/home/jovyan"
-
+DEFAULT_SYNC_NAME = "Jupyter/Nbgdrive"
 
 def create_sync_directory():
     """
@@ -16,10 +16,14 @@ def create_sync_directory():
     create_dir_status = 'Could not create Sync Directory'
 
     if _user_is_authenticated():
-        command = 'STORED_DIR=$(<.syncdirectory.txt); \
+        command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                    if [ -e  "$SYNC_DIR_FILE" ]; then \
+                    STORED_DIR=$(<.syncdirectory.txt); \
+                    else STORED_DIR={}; \
+                    fi; \
                     echo "Creating Google Drive Directory named $STORED_DIR."; \
-                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";'\
-                    .format(SYNC_DIRECTORY)
+                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";' \
+                    .format(DEFAULT_SYNC_NAME, SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
         create_dir_status = 'Successfully created Drive directory!' if not err else create_dir_status
@@ -32,7 +36,11 @@ def create_sync_directory():
 def logout_from_gdrive():
     """Revoke gdrive permissions"""
     logout_status = 'Unable to log out from Jupyter Google Drive Sync'
-    command = 'find .syncdirectory.txt -delete; \
+    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                if [ -e  "$SYNC_DIR_FILE" ]; then \
+                find .syncdirectory.txt -delete; \
+                else echo "No .syncdirectory file to delete"; \
+                fi; \
               find ~/.gdrive -name \*.json -delete'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
@@ -63,9 +71,13 @@ def check_gdrive_last_sync_time():
     """Returns the time of the last sync"""
     lastSyncTime = ''
 
-    command = 'STORED_DIR=$(<.syncdirectory.txt); \
-               LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-               gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
+    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                if [ -e  "$SYNC_DIR_FILE" ]; then \
+                STORED_DIR=$(<.syncdirectory.txt); \
+                else STORED_DIR={}; \
+                fi; \
+                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'.format(DEFAULT_SYNC_NAME)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
 
@@ -85,10 +97,14 @@ def sync_gdrive_directory():
     if not _remote_sync_directory_exists():
         create_sync_directory()
 
-    command = 'STORED_DIR=$(<.syncdirectory.txt); \
-                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                if [ -e  "$SYNC_DIR_FILE" ]; then \
+                STORED_DIR=$(<.syncdirectory.txt); \
+                else STORED_DIR={}; \
+                fi; \
+                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
                 gdrive sync upload {} $LOAD_DIRECTORY; \
-                echo "Syncing directory now."'.format(SYNC_DIRECTORY)
+                echo "Syncing directory now."'.format(DEFAULT_SYNC_NAME, SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     sync_status = 'Successfully synced data to Google Drive' if not err else sync_status
@@ -110,6 +126,23 @@ def set_sync_folder(param):
     }
 
 
+def _remote_sync_directory_exists():
+    """Checks to make sure remote sync drive folder exists"""
+    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                if [ -e  "$SYNC_DIR_FILE" ]; then \
+                STORED_DIR=$(<.syncdirectory.txt); \
+                else STORED_DIR={}; \
+                fi; \
+                LOAD_DIRECTORY="$(gdrive list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
+                if [ -z "$LOAD_DIRECTORY" ]; \
+                    then echo "Remote directory not found"; \
+                else echo "Found remote directory"; \
+                fi'.format(DEFAULT_SYNC_NAME)
+    p = Popen(command, stdout=PIPE, shell=True)
+    output, err = p.communicate()
+    return True if "Found remote directory" in output.decode("utf-8") else False
+
+
 def _get_gdrive_auth_url():
     """Returns the URL for the user to authenticate iff user needs to authenticate"""
     auth_url_or_status = ''
@@ -128,19 +161,6 @@ def _get_gdrive_auth_url():
 def _user_is_authenticated():
     """Checks if user is authenticated"""
     return False if 'http' in _get_gdrive_auth_url() else True
-
-
-def _remote_sync_directory_exists():
-    """Checks to make sure remote sync drive folder exists"""
-    command = 'STORED_DIR=$(<.syncdirectory.txt); \
-                LOAD_DIRECTORY="$(gdrive sync list | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                if [ -z "$LOAD_DIRECTORY" ]; \
-                then echo "Remote directory not found"; \
-                else echo "Found remote directory"; \
-                fi'
-    p = Popen(command, stdout=PIPE, shell=True)
-    output, err = p.communicate()
-    return True if "Found remote directory" in output.decode("utf-8") else False
 
 
 def pull_from_gdrive(pull_id):
