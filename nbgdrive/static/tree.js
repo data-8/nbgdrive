@@ -35,6 +35,7 @@ define([
     /*
      *  Check if it is time to sync files by comparing the current time to the time
      *  our files were synced and syncing if it has been more than 24 hours.
+     *  Add one to month b/c January == 0
      */
     var checkIfReadyToSync = function () {
         $.getJSON(utils.get_body_data('baseUrl') + 'lastSyncTime', function(data) {
@@ -44,12 +45,18 @@ define([
 
             // Add a 0 in front of single digit months to match the date string
             if (date.getMonth() < 10) {
-                date_components.splice(2, 0, "0");
+                date_components.splice(2, 1, "0" + (date.getMonth() + 1).toString());
+            }
+
+            // Add a 0 in front of single digit day to match the date string
+            if (date.getDate() < 10) {
+                date_components.splice(4, 1, "0" + date.getDate().toString());
             }
 
             var currentDate = date_components.join("");
 
             if (currentDate !== lastSyncTime) {
+                console.log("Current date is: " + currentDate + ", but last sync time was: " + lastSyncTime + "; so, sync.");
                 syncDriveFiles();
             }
         });
@@ -146,7 +153,7 @@ define([
                       });
             })
         );
-    
+
         $('#nbgdrive-button-group').prepend(
           $('<div>').addClass('btn-group').prepend(
               $('<input>').attr('id', 'nbgdrive-pull-id').attr('type', 'text').css('margin-right', '5px')

@@ -7,6 +7,19 @@ DRIVE_MAX_SIZE = 1000
 SYNC_DIRECTORY = "/home/jovyan"
 DEFAULT_SYNC_NAME = "Jupyter/Nbgdrive"
 
+STORED_DIR_COMMAND = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
+                    if [ -e  "$SYNC_DIR_FILE" ]; then \
+                    STORED_DIR=$(head -n 1 .syncdirectory.txt); \
+                    else STORED_DIR={}; \
+                    fi;' \
+                    .format(DEFAULT_SYNC_NAME)
+
+LOAD_DIRECTORY_COMMAND = 'LOAD_DIRECTORY="$(gdrive list -m {} \
+                    | grep -i $STORED_DIR \
+                    | cut -c 1-28 \
+                    | head -n 1)";' \
+                    .format(DRIVE_MAX_SIZE)
+
 def create_sync_directory():
     """
      Creates a gdrive sync directory in Google Drive and initializes the syncing process by performing the first sync.
@@ -17,13 +30,12 @@ def create_sync_directory():
     create_dir_status = 'Could not create Sync Directory'
 
     if _user_is_authenticated():
-        command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
-                    if [ -e  "$SYNC_DIR_FILE" ]; then \
-                    STORED_DIR=$(<.syncdirectory.txt); \
-                    else STORED_DIR={}; \
-                    fi; \
-                    echo "Creating Google Drive Directory named $STORED_DIR."; \
-                    (RESULT=$(gdrive mkdir $STORED_DIR) && ID="$(echo $RESULT | cut -d " " -f 2)" && gdrive sync upload {} $ID) || echo "Directory already exists.";' \
+        command = STORED_DIR_COMMAND + \
+                    'echo "Creating Google Drive Directory named $STORED_DIR."; \
+                    (RESULT=$(gdrive mkdir $STORED_DIR) && \
+                     ID="$(echo $RESULT | cut -d " " -f 2)" && \
+                     gdrive sync upload {} $ID) || \
+                     echo "Directory already exists.";' \
                     .format(DEFAULT_SYNC_NAME, SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
@@ -72,13 +84,9 @@ def check_gdrive_last_sync_time():
     """Returns the time of the last sync"""
     lastSyncTime = ''
 
-    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
-                if [ -e  "$SYNC_DIR_FILE" ]; then \
-                STORED_DIR=$(<.syncdirectory.txt); \
-                else STORED_DIR={}; \
-                fi; \
-                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE)
+    command = STORED_DIR_COMMAND + \
+            LOAD_DIRECTORY_COMMAND + \
+            'gdrive info $LOAD_DIRECTORY | grep "Modified" | cut -c 11-20'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
 
@@ -98,14 +106,11 @@ def sync_gdrive_directory():
     if not _remote_sync_directory_exists():
         create_sync_directory()
 
-    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
-                if [ -e  "$SYNC_DIR_FILE" ]; then \
-                STORED_DIR=$(<.syncdirectory.txt); \
-                else STORED_DIR={}; \
-                fi; \
-                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                gdrive sync upload {} $LOAD_DIRECTORY; \
-                echo "Syncing directory now."'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE, SYNC_DIRECTORY)
+    command = STORED_DIR_COMMAND + \
+              LOAD_DIRECTORY_COMMAND + \
+              'gdrive sync upload {} $LOAD_DIRECTORY; \
+                echo "Syncing directory now."' \
+                .format(SYNC_DIRECTORY)
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     sync_status = 'Successfully synced data to Google Drive' if not err else sync_status
@@ -129,16 +134,12 @@ def set_sync_folder(param):
 
 def _remote_sync_directory_exists():
     """Checks to make sure remote sync drive folder exists"""
-    command = 'SYNC_DIR_FILE=".syncdirectory.txt"; \
-                if [ -e  "$SYNC_DIR_FILE" ]; then \
-                STORED_DIR=$(<.syncdirectory.txt); \
-                else STORED_DIR={}; \
-                fi; \
-                LOAD_DIRECTORY="$(gdrive list -m {} | grep -i $STORED_DIR | cut -c 1-28 | head -n 1)"; \
-                if [ -z "$LOAD_DIRECTORY" ]; \
+    command = STORED_DIR_COMMAND + \
+                LOAD_DIRECTORY_COMMAND + \
+                'if [ -z "$LOAD_DIRECTORY" ]; \
                     then echo "Remote directory not found"; \
                 else echo "Found remote directory"; \
-                fi'.format(DEFAULT_SYNC_NAME, DRIVE_MAX_SIZE)
+                fi'
     p = Popen(command, stdout=PIPE, shell=True)
     output, err = p.communicate()
     return True if "Found remote directory" in output.decode("utf-8") else False
