@@ -41,23 +41,9 @@ define([
         $.getJSON(utils.get_body_data('baseUrl') + 'lastSyncTime', function(data) {
             var date = new Date();
             var lastSyncTime = String(data['lastSyncTime']).split('-');
-            var date_components = [date.getFullYear().toString(), "-", (date.getMonth() + 1).toString(), "-", date.getDate().toString()]
-
-            // Add a 0 in front of single digit months to match the date string
-            if (date.getMonth() < 10) {
-                date_components.splice(2, 1, "0" + (date.getMonth() + 1).toString());
-            }
-
-            // Add a 0 in front of single digit day to match the date string
-            if (date.getDate() < 10) {
-                date_components.splice(4, 1, "0" + date.getDate().toString());
-            }
-
-            var currentDate = date_components.join("");
-
-            lastSyncYear = parseInt(lastSyncTime[0]);
-            lastSyncMonth = parseInt(lastSyncTime[1]);
-            lastSyncDay = parseInt(lastSyncTime[2]);
+            var lastSyncYear = parseInt(lastSyncTime[0]);
+            var lastSyncMonth = parseInt(lastSyncTime[1]);
+            var lastSyncDay = parseInt(lastSyncTime[2]);
             var lastSyncDate = new Date(lastSyncYear, lastSyncMonth, lastSyncDay);
 
             date.setMonth(date.getMonth() + 1)
