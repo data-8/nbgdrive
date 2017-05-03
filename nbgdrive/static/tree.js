@@ -40,7 +40,7 @@ define([
     var checkIfReadyToSync = function () {
         $.getJSON(utils.get_body_data('baseUrl') + 'lastSyncTime', function(data) {
             var date = new Date();
-            var lastSyncTime = String(data['lastSyncTime']);
+            var lastSyncTime = String(data['lastSyncTime']).split('-');
             var date_components = [date.getFullYear().toString(), "-", (date.getMonth() + 1).toString(), "-", date.getDate().toString()]
 
             // Add a 0 in front of single digit months to match the date string
@@ -55,7 +55,16 @@ define([
 
             var currentDate = date_components.join("");
 
-            if (currentDate !== lastSyncTime) {
+            lastSyncYear = parseInt(lastSyncTime[0]);
+            lastSyncMonth = parseInt(lastSyncTime[1]);
+            lastSyncDay = parseInt(lastSyncTime[2]);
+            var lastSyncDate = new Date(lastSyncYear, lastSyncMonth, lastSyncDay);
+
+            date.setMonth(date.getMonth() + 1)
+            var dateDiff = Math.abs(date - lastSyncDate) / (1000 * 60 * 60 * 24)
+            console.log("Date diff: " + dateDiff);
+
+            if (dateDiff > 2) {
                 console.log("Current date is: " + currentDate + ", but last sync time was: " + lastSyncTime + "; so, sync.");
                 syncDriveFiles();
             }
