@@ -36,7 +36,7 @@ def create_sync_directory():
                      ID="$(echo $RESULT | cut -d " " -f 2)" && \
                      gdrive sync upload {} $ID) || \
                      echo "Directory already exists.";' \
-                    .format(DEFAULT_SYNC_NAME, SYNC_DIRECTORY)
+                    .format(SYNC_DIRECTORY)
         p = Popen(command, stdout=PIPE, shell=True)
         output, err = p.communicate()
         create_dir_status = 'Successfully created Drive directory!' if not err else create_dir_status
