@@ -10,6 +10,8 @@ define([
      *  to a pre-established Google Drive Sync Directory.
      */
     var syncDriveFiles = function () {
+        $('#nbgdrive-pull-id').remove();
+
         $('#nbgdrive-button-group').prepend(
           $('<div>').addClass('btn-group').prepend(
               $('<strong>').attr('id', 'nbgdrive-authenticated-result')

@@ -17,6 +17,18 @@ To enable this extension for all notebooks:
 jupyter nbextension enable --py nbgdrive
 ```
 
+## Important Note
+
+This repository was made specifically for UC Berkeley's Data 8 class, and as such, makes assumptions about the location of your work directory with which we are to sync files upstream. It currently matches some Docker images we use, and defaults to `/home/jovyan`. Please note that if the structure of your directory does not match, you will be unable to sync files to Google Drive. Before we make a fix to this, you can still use this repository by changing this [file directory](https://github.com/data-8/nbgdrive/blob/master/nbgdrive/handlers.py#L7) to whatever local directory you will be using. Then, please rerun the above commands. In this directory, you can run:
+
+```
+pip uninstall nbgdrive
+pip install .
+jupyter serverextension enable --py nbgdrive
+jupyter nbextension install --py nbgdrive
+jupyter nbextension enable --py nbgdrive
+```
+
 ## Usage
 
 Once correctly installed, you can login with Google Drive in order to grant nbgdrive the required permissions to run.
@@ -33,14 +45,16 @@ Once you are successfully logged in, you will be able to Sync manually by pressi
 
 ## Syncing
 
-Synching will create a sync folder in the main directory of your Google Drive, and upstream sync to it the contents of the Jupyter Notebook directory `/home/jovyan`. As this tool was created with UC Berkeley's Data 8 class in mind, the default folder structure will be named `data8/$JPY_USER`.
+Syncing will create a sync folder in the main directory of your Google Drive, and upstream sync to it the contents of the Jupyter Notebook directory `/home/jovyan`. As this tool was created with UC Berkeley's Data 8 class in mind, the default folder structure will be named `Jupyter/Nbgdrive`.
 
 Tampering with the contents or location of the sync folder will cause nbgdrive to break.
-To fix any such issue, it's recommended to log out (through the logout button next to the sync button), and reauthenticate Google Drive.
+To fix any such issue, it's recommended to log out (through the logout button next to the sync button), delete any preexisting synced folders on your Google Drive account, and reauthenticate Google Drive.
 
 ## Installation and Dependencies
 
 There are a few dependencies required for this repository to function currectly. Underlying `nbgdrive` is a Google Drive [CLI](https://github.com/prasmussen/gdrive). You must install and give this tool proper access before using `nbgdrive`. Please ensure this tool exists on your `$PATH`, by putting in the default `/usr/bin` or by modifying your `bash_profile`. 
+
+On unix based systems, after downloading `gdrive`, you must make it executable by running a `chmod +x gdrive` command, before `mv gdrive /usr/bin`. Alternatively, you can use `brew install gdrive`.
 
 Additionally, there are Selenium tests located in the `tests` subdirectory. To run these tests, first `pip install selenium`. Depending on what browsers you'd like to test for, you will also need to download some [drivers](http://selenium-python.readthedocs.io/installation.html#drivers) and place them in your `/usr/bin` directory.
 
